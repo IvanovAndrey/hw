@@ -1,4 +1,4 @@
-module github.com/IvanovAndrey/hw02_unpack_string
+module github.com/IvanovAndrey/hw/hw02_unpack_string
 
 go 1.22
 

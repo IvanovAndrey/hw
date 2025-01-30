@@ -1,4 +1,4 @@
-module github.com/IvanovAndrey/hw11_telnet_client
+module github.com/IvanovAndrey/hw/hw11_telnet_client
 
 go 1.22
 

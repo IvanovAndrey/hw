@@ -1,4 +1,4 @@
-module github.com/IvanovAndrey/hw03_frequency_analysis
+module github.com/IvanovAndrey/hw/hw03_frequency_analysis
 
 go 1.22
 

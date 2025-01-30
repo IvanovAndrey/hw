@@ -1,4 +1,4 @@
-module github.com/IvanovAndrey/hw06_pipeline_execution
+module github.com/IvanovAndrey/hw/hw06_pipeline_execution
 
 go 1.22
 
