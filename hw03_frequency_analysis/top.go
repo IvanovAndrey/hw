@@ -10,11 +10,7 @@ func Top10(str string) []string {
 	freq := make(map[string]int)
 	result := make([]string, 0)
 	for _, word := range words {
-		if _, ok := freq[word]; ok {
-			freq[word]++
-		} else {
-			freq[word] = 1
-		}
+		freq[word]++
 	}
 	for cnt := 10; cnt > 0; {
 		wordsMaxFreq := getMaxFreqWords(freq)
@@ -45,11 +41,9 @@ func getMaxFreqWords(freq map[string]int) []string {
 }
 
 func addMaxFreqWordsToRes(wordsMaxFreq []string, cnt int, result []string) (int, []string) {
-	resArr := make([]string, len(wordsMaxFreq))
 	sort.Strings(wordsMaxFreq)
 	if len(wordsMaxFreq) <= cnt {
-		resArr = append(result, wordsMaxFreq...)
-		return cnt - len(wordsMaxFreq), resArr
+		return cnt - len(wordsMaxFreq), append(result, wordsMaxFreq...)
 	}
 	return 0, append(result, wordsMaxFreq[:cnt]...)
 }
