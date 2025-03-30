@@ -71,6 +71,7 @@ func (l *list) PushBack(v interface{}) *ListItem {
 	l.len++
 	return item
 }
+
 func (l *list) Remove(i *ListItem) {
 	if i == nil {
 		return
