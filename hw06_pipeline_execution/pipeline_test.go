@@ -101,7 +101,6 @@ func TestPipeline(t *testing.T) {
 		require.Equal(t, res, in)
 	})
 	t.Run("in is nil", func(t *testing.T) {
-
 		done := make(Bi)
 		res := ExecutePipeline(nil, done, stages...)
 
