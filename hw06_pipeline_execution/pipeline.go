@@ -24,7 +24,8 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 		cancel()
 	}()
 	ch := in
-	for _, stage := range stages {
+	for _, s := range stages {
+		stage := s
 		ch = wrapStage(ctx, stage, ch)
 	}
 
@@ -49,8 +50,8 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 
 func wrapStage(ctx context.Context, stage Stage, in In) Out {
 	out := make(Bi)
+	stageOut := stage(in)
 	go func() {
-		stageOut := stage(in)
 		defer func() {
 			close(out)
 			//nolint
