@@ -7,6 +7,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/consts"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/app"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/server/http"
@@ -33,10 +34,10 @@ func main() {
 		panic(err)
 	}
 
-	logg := logger.New(cfg.Logger.Level)
+	logg := logger.New(consts.AppName, release, cfg.Logger.Level)
 
-	storage := memorystorage.New()
-	calendar := app.New(logg, storage)
+	storage := memorystorage.NewLocalStorage(logg.WithModule("localStorage"))
+	calendar := app.New(logg.WithModule("dbStorage"), storage)
 
 	server := internalhttp.NewServer(logg, calendar)
 
@@ -51,11 +52,11 @@ func main() {
 		defer cancel()
 
 		if err := server.Stop(ctx); err != nil {
-			log.Err(err).Msg("failed to stop http server")
+			logg.Error("failed to stop http server " + err.Error())
 		}
 	}()
 
-	log.Info().Msg("calendar is running...")
+	logg.Info("calendar is running...")
 
 	if err := server.Start(ctx); err != nil {
 		cancel()
