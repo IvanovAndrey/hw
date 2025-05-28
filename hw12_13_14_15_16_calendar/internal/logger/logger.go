@@ -13,6 +13,10 @@ func (l Logger) Info(msg string) {
 	fmt.Println(msg)
 }
 
+func (l Logger) Debug(msg string) {
+	fmt.Println(msg)
+}
+
 func (l Logger) Error(msg string) {
 	// TODO
 }

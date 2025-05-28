@@ -1,5 +1,25 @@
-[logger]
-level = "INFO"
+logger:
+  level: debug
 
-# TODO
-# ...
+system:
+  http:
+    address: "0.0.0.0:8080"
+    write_timeout: 15
+    read_timeout: 15
+
+  grpc:
+    port: 8081
+    connection_timeout: 10
+
+  database:
+    enable: true
+    host: "localhost"
+    port: 7432
+    db_name: "postgres"
+    scheme: "calendar"
+    user: "postgres"
+    password: "postgres"
+    timeout: 5
+    max_conns: 20
+    max_conn_life_time: 300
+    max_conn_idle_time: 60

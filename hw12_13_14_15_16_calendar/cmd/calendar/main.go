@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -12,12 +11,13 @@ import (
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/server/http"
 	memorystorage "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/storage/memory"
+	"github.com/rs/zerolog/log"
 )
 
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "/etc/calendar/config.toml", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "/Users/andrey.ivanov/repos/Education/hw/hw12_13_14_15_16_calendar/configs/config.yaml", "Path to configuration file")
 }
 
 func main() {
@@ -28,8 +28,12 @@ func main() {
 		return
 	}
 
-	config := NewConfig()
-	logg := logger.New(config.Logger.Level)
+	cfg, err := LoadConfig(configFile)
+	if err != nil {
+		panic(err)
+	}
+
+	logg := logger.New(cfg.Logger.Level)
 
 	storage := memorystorage.New()
 	calendar := app.New(logg, storage)
@@ -47,15 +51,14 @@ func main() {
 		defer cancel()
 
 		if err := server.Stop(ctx); err != nil {
-			logg.Error("failed to stop http server: " + err.Error())
+			log.Err(err).Msg("failed to stop http server")
 		}
 	}()
 
-	logg.Info("calendar is running...")
+	log.Info().Msg("calendar is running...")
 
 	if err := server.Start(ctx); err != nil {
-		logg.Error("failed to start http server: " + err.Error())
 		cancel()
-		os.Exit(1) //nolint:gocritic
+		log.Fatal().Msgf("failed to start http server: %s", err)
 	}
 }
