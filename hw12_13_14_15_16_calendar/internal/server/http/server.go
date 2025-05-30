@@ -2,30 +2,56 @@ package internalhttp
 
 import (
 	"context"
+	"net/http"
+	"time"
+
+	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/configuration"
+	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/logger"
+	"github.com/pkg/errors"
 )
 
-type Server struct { // TODO
+type Server struct {
+	httpServer *http.Server
+	logger     logger.Logger
+	app        Application
 }
 
-type Logger interface { // TODO
+type Application interface {
 }
 
-type Application interface { // TODO
+func NewServer(cfg *configuration.Config, logger logger.Logger, app Application) *Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v1/livez", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("OK"))
+	})
+
+	httpServer := &http.Server{
+		Addr:    cfg.System.Http.Address,
+		Handler: loggingMiddleware(logger, mux),
+	}
+
+	return &Server{
+		httpServer: httpServer,
+		logger:     logger,
+		app:        app,
+	}
 }
 
-func NewServer(logger Logger, app Application) *Server {
-	return &Server{}
-}
+func (s *Server) Start() error {
+	go func() {
+		s.logger.Info("Starting HTTP server at " + s.httpServer.Addr)
+		if err := s.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			s.logger.Error("HTTP server error: " + err.Error())
+		}
+	}()
 
-func (s *Server) Start(ctx context.Context) error {
-	// TODO
-	<-ctx.Done()
 	return nil
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	// TODO
-	return nil
+	s.logger.Info("Shutting down HTTP server...")
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	return s.httpServer.Shutdown(ctxWithTimeout)
 }
-
-// TODO

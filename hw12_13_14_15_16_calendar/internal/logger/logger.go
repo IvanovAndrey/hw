@@ -43,7 +43,7 @@ type logEntry struct {
 	Message   string `json:"message"`
 }
 
-func New(appName, appVersion, level string) *Logger {
+func NewLogger(appName, appVersion, level string) *Logger {
 	lvl, ok := levelNames[strings.ToLower(level)]
 	if !ok {
 		lvl = LevelInfo

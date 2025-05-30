@@ -1,4 +1,4 @@
-package main
+package configuration
 
 import (
 	"github.com/caarlos0/env/v10"
