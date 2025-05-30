@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/errors"
+	calendarErrors "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/errors"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/logger"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/storage/models"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/pkg/errors"
 )
 
 type DBConfig struct {
@@ -19,12 +21,12 @@ type DBConfig struct {
 	SSLMode  string
 }
 
-type DbStorage struct {
+type DBStorage struct {
 	DB     *pgxpool.Pool
 	logger logger.Logger
 }
 
-func NewStorage(ctx context.Context, cfg DBConfig, logger logger.Logger) (*DbStorage, error) {
+func NewStorage(ctx context.Context, cfg DBConfig, logger logger.Logger) (*DBStorage, error) {
 	connStr := fmt.Sprintf(
 		"user=%s password=%s host=%s port=%d dbname=%s sslmode=%s",
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName, cfg.SSLMode,
@@ -43,10 +45,10 @@ func NewStorage(ctx context.Context, cfg DBConfig, logger logger.Logger) (*DbSto
 	}
 
 	logger.Debug("connected to database")
-	return &DbStorage{DB: dbPool, logger: logger}, nil
+	return &DBStorage{DB: dbPool, logger: logger}, nil
 }
 
-func (s *DbStorage) EventCreate(ctx context.Context, req *models.CreateEventReq) (*models.Event, error) {
+func (s *DBStorage) EventCreate(ctx context.Context, req *models.CreateEventReq) (*models.Event, error) {
 	checkSQL := `
 		SELECT EXISTS (
 			SELECT 1 FROM calendar.events
@@ -62,7 +64,7 @@ func (s *DbStorage) EventCreate(ctx context.Context, req *models.CreateEventReq)
 	}
 	if exists {
 		s.logger.Error("conflict: user=" + req.User + " date=" + req.Date + " end=" + req.EndTime)
-		return nil, fmt.Errorf("event conflict: %w", errors.ErrDateBusy)
+		return nil, fmt.Errorf("event conflict: %w", calendarErrors.ErrDateBusy)
 	}
 
 	insertSQL := `
@@ -72,7 +74,16 @@ func (s *DbStorage) EventCreate(ctx context.Context, req *models.CreateEventReq)
 	s.logger.Debug("SQL: " + insertSQL)
 
 	var id string
-	if err := s.DB.QueryRow(ctx, insertSQL, req.Title, req.Date, req.EndTime, req.Description, req.User, req.NotifyBefore).Scan(&id); err != nil {
+	if err := s.DB.QueryRow(
+		ctx,
+		insertSQL,
+		req.Title,
+		req.Date,
+		req.EndTime,
+		req.Description,
+		req.User,
+		req.NotifyBefore,
+	).Scan(&id); err != nil {
 		s.logger.Error("insert failed: " + err.Error())
 		return nil, fmt.Errorf("insert event: %w", err)
 	}
@@ -89,7 +100,7 @@ func (s *DbStorage) EventCreate(ctx context.Context, req *models.CreateEventReq)
 	}, nil
 }
 
-func (s *DbStorage) EventEdit(ctx context.Context, req *models.EditEventReq) (*models.Event, error) {
+func (s *DBStorage) EventEdit(ctx context.Context, req *models.EditEventReq) (*models.Event, error) {
 	event, err := s.EventGet(ctx, &models.EventIDReq{ID: req.ID})
 	if err != nil {
 		s.logger.Error("edit get failed: " + err.Error())
@@ -131,7 +142,7 @@ func (s *DbStorage) EventEdit(ctx context.Context, req *models.EditEventReq) (*m
 	}
 	if exists {
 		s.logger.Error("conflict on edit: id=" + event.ID)
-		return nil, fmt.Errorf("event conflict: %w", errors.ErrDateBusy)
+		return nil, fmt.Errorf("event conflict: %w", calendarErrors.ErrDateBusy)
 	}
 
 	updateSQL := `
@@ -140,7 +151,17 @@ func (s *DbStorage) EventEdit(ctx context.Context, req *models.EditEventReq) (*m
 		WHERE id = $7`
 	s.logger.Debug("SQL: " + updateSQL)
 
-	if _, err := s.DB.Exec(ctx, updateSQL, event.Title, event.Date, event.EndTime, event.Description, event.User, event.NotifyBefore, event.ID); err != nil {
+	if _, err := s.DB.Exec(
+		ctx,
+		updateSQL,
+		event.Title,
+		event.Date,
+		event.EndTime,
+		event.Description,
+		event.User,
+		event.NotifyBefore,
+		event.ID,
+	); err != nil {
 		s.logger.Error("edit update failed: " + err.Error())
 		return nil, fmt.Errorf("update event: %w", err)
 	}
@@ -149,7 +170,7 @@ func (s *DbStorage) EventEdit(ctx context.Context, req *models.EditEventReq) (*m
 	return event, nil
 }
 
-func (s *DbStorage) EventDelete(ctx context.Context, req *models.EventIDReq) error {
+func (s *DBStorage) EventDelete(ctx context.Context, req *models.EventIDReq) error {
 	sql := `DELETE FROM calendar.events WHERE id = $1`
 	s.logger.Debug("SQL: " + sql)
 
@@ -162,7 +183,7 @@ func (s *DbStorage) EventDelete(ctx context.Context, req *models.EventIDReq) err
 	return nil
 }
 
-func (s *DbStorage) EventGet(ctx context.Context, req *models.EventIDReq) (*models.Event, error) {
+func (s *DBStorage) EventGet(ctx context.Context, req *models.EventIDReq) (*models.Event, error) {
 	sql := `
 		SELECT id, title, start_time, end_time, description, user_id, notify_before
 		FROM calendar.events
@@ -173,19 +194,19 @@ func (s *DbStorage) EventGet(ctx context.Context, req *models.EventIDReq) (*mode
 	if err := s.DB.QueryRow(ctx, sql, req.ID).Scan(
 		&e.ID, &e.Title, &e.Date, &e.EndTime, &e.Description, &e.User, &e.NotifyBefore,
 	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			s.logger.Warn("event not found id=" + req.ID)
+			return nil, calendarErrors.ErrNotFound
+		}
 		s.logger.Error("get failed: " + err.Error())
 		return nil, fmt.Errorf("get event: %w", err)
 	}
 
 	s.logger.Debug("event fetched id=" + req.ID)
-	// TODO refactor
-	if e.User == "" {
-		return nil, errors.ErrNotFound
-	}
 	return &e, nil
 }
 
-func (s *DbStorage) EventGetList(ctx context.Context, req *models.CreateEventReq) (*models.GetEventListResp, error) {
+func (s *DBStorage) EventGetList(ctx context.Context, req *models.CreateEventReq) (*models.GetEventListResp, error) {
 	sql := `
 		SELECT id, title, start_time, end_time, description, user_id, notify_before
 		FROM calendar.events
@@ -203,7 +224,15 @@ func (s *DbStorage) EventGetList(ctx context.Context, req *models.CreateEventReq
 	var events []models.Event
 	for rows.Next() {
 		var e models.Event
-		if err := rows.Scan(&e.ID, &e.Title, &e.Date, &e.EndTime, &e.Description, &e.User, &e.NotifyBefore); err != nil {
+		if err := rows.Scan(
+			&e.ID,
+			&e.Title,
+			&e.Date,
+			&e.EndTime,
+			&e.Description,
+			&e.User,
+			&e.NotifyBefore,
+		); err != nil {
 			s.logger.Error("scan failed: " + err.Error())
 			return nil, fmt.Errorf("scan event: %w", err)
 		}

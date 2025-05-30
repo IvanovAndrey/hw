@@ -25,7 +25,7 @@ func NewLocalStorage(logger logger.Logger) *LocalStorage {
 	}
 }
 
-func (s *LocalStorage) EventCreate(ctx context.Context, req *models.CreateEventReq) (*models.Event, error) {
+func (s *LocalStorage) EventCreate(_ context.Context, req *models.CreateEventReq) (*models.Event, error) {
 	s.logger.Debug("EventCreate called")
 
 	s.mu.Lock()
@@ -54,7 +54,7 @@ func (s *LocalStorage) EventCreate(ctx context.Context, req *models.CreateEventR
 	return event, nil
 }
 
-func (s *LocalStorage) EventEdit(ctx context.Context, req *models.EditEventReq) (*models.Event, error) {
+func (s *LocalStorage) EventEdit(_ context.Context, req *models.EditEventReq) (*models.Event, error) {
 	s.logger.Debug("EventEdit called")
 
 	s.mu.Lock()
@@ -99,7 +99,7 @@ func (s *LocalStorage) EventEdit(ctx context.Context, req *models.EditEventReq) 
 	return &updated, nil
 }
 
-func (s *LocalStorage) EventDelete(ctx context.Context, req *models.EventIDReq) error {
+func (s *LocalStorage) EventDelete(_ context.Context, req *models.EventIDReq) error {
 	s.logger.Debug("EventDelete called id=" + req.ID)
 
 	s.mu.Lock()
@@ -110,7 +110,7 @@ func (s *LocalStorage) EventDelete(ctx context.Context, req *models.EventIDReq) 
 	return nil
 }
 
-func (s *LocalStorage) EventGet(ctx context.Context, req *models.EventIDReq) (*models.Event, error) {
+func (s *LocalStorage) EventGet(_ context.Context, req *models.EventIDReq) (*models.Event, error) {
 	s.logger.Debug("EventGet called id=" + req.ID)
 
 	s.mu.RLock()
@@ -127,7 +127,7 @@ func (s *LocalStorage) EventGet(ctx context.Context, req *models.EventIDReq) (*m
 	return &cpy, nil
 }
 
-func (s *LocalStorage) EventGetList(ctx context.Context, req *models.CreateEventReq) (*models.GetEventListResp, error) {
+func (s *LocalStorage) EventGetList(_ context.Context, req *models.CreateEventReq) (*models.GetEventListResp, error) {
 	s.logger.Debug("EventGetList called for user=" + req.User)
 
 	s.mu.RLock()

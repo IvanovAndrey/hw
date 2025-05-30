@@ -16,19 +16,20 @@ type Server struct {
 	app        Application
 }
 
-type Application interface {
-}
+type Application interface{}
 
 func NewServer(cfg *configuration.Config, logger logger.Logger, app Application) *Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/livez", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/v1/livez", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("OK"))
 	})
 
 	httpServer := &http.Server{
-		Addr:    cfg.System.Http.Address,
-		Handler: loggingMiddleware(logger, mux),
+		Addr:         cfg.System.HTTP.Address,
+		Handler:      loggingMiddleware(logger, mux),
+		ReadTimeout:  time.Duration(cfg.System.HTTP.ReadTimeout) * time.Second,
+		WriteTimeout: time.Duration(cfg.System.HTTP.WriteTimeout) * time.Second,
 	}
 
 	return &Server{

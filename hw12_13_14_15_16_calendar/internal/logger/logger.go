@@ -12,13 +12,15 @@ import (
 type Level int
 
 const (
-	LevelError Level = iota
+	LevelFatal Level = iota
+	LevelError
 	LevelWarn
 	LevelInfo
 	LevelDebug
 )
 
 var levelNames = map[string]Level{
+	"fatal": LevelFatal,
 	"error": LevelError,
 	"warn":  LevelWarn,
 	"info":  LevelInfo,
@@ -105,4 +107,9 @@ func (l Logger) Info(msg string) {
 
 func (l Logger) Debug(msg string) {
 	l.log(LevelDebug, "debug", msg)
+}
+
+func (l Logger) Fatal(msg string) {
+	l.log(LevelError, "fatal", msg)
+	panic(msg)
 }

@@ -20,6 +20,4 @@ system:
     user: "postgres"
     password: "postgres"
     timeout: 5
-    max_conns: 20
-    max_conn_life_time: 300
-    max_conn_idle_time: 60
+    ssl_mode: disable
