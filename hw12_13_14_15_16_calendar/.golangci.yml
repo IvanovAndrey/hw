@@ -30,6 +30,9 @@ issues:
         - dupl
         - gocyclo
         - gosec
+  exclude-dirs:
+    - vendor
+    - pkg/mod
 
 linters:
   disable-all: true
