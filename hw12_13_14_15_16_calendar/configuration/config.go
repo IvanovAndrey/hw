@@ -1,7 +1,6 @@
 package configuration
 
 import (
-	"github.com/caarlos0/env/v10"
 	"github.com/spf13/viper"
 )
 
@@ -45,16 +44,6 @@ func LoadConfig(configPath string) (*Config, error) {
 		return nil, err
 	}
 	if err := viper.Unmarshal(&cfg); err != nil {
-		return nil, err
-	}
-
-	if err := env.Parse(&cfg.System.HTTP); err != nil {
-		return nil, err
-	}
-	if err := env.Parse(&cfg.System.Grpc); err != nil {
-		return nil, err
-	}
-	if err := env.Parse(&cfg.System.Database); err != nil {
 		return nil, err
 	}
 

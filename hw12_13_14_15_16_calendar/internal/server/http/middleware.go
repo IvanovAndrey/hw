@@ -6,9 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/logger"
-	"github.com/google/uuid"
 )
 
 type responseWriter struct {
@@ -21,12 +18,9 @@ func (rw *responseWriter) WriteHeader(code int) {
 	rw.ResponseWriter.WriteHeader(code)
 }
 
-func loggingMiddleware(log logger.Logger, next http.Handler) http.Handler {
+func loggingMiddleware(log Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-
-		cid := uuid.NewString()
-		logg := log.WithCid(cid)
 		ip := clientIP(r)
 		rw := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
 
@@ -34,7 +28,7 @@ func loggingMiddleware(log logger.Logger, next http.Handler) http.Handler {
 
 		duration := time.Since(start)
 
-		logg.Info(
+		log.Info(
 			"Request handled | " +
 				"IP=" + ip + " | " +
 				"Time=" + start.Format(time.RFC3339) + " | " +

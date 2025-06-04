@@ -6,19 +6,26 @@ import (
 	"time"
 
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/configuration"
-	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/logger"
 	"github.com/pkg/errors"
 )
 
 type Server struct {
 	httpServer *http.Server
-	logger     logger.Logger
+	logger     Logger
 	app        Application
 }
 
 type Application interface{}
 
-func NewServer(cfg *configuration.Config, logger logger.Logger, app Application) *Server {
+type Logger interface {
+	Debug(msg string)
+	Info(msg string)
+	Warn(msg string)
+	Error(msg string)
+	Fatal(msg string)
+}
+
+func NewServer(cfg *configuration.Config, logger Logger, app Application) *Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/livez", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)

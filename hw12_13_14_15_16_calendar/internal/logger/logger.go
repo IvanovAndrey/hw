@@ -64,11 +64,6 @@ func (l Logger) WithModule(module string) Logger {
 	return l
 }
 
-func (l Logger) WithCid(cid string) Logger {
-	l.cid = cid
-	return l
-}
-
 func (l Logger) log(msgLevel Level, levelStr, msg string) {
 	if msgLevel > l.level {
 		return
