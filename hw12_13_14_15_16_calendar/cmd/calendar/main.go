@@ -10,7 +10,9 @@ import (
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/configuration"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/consts"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/app"
+	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/controllers"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/logger"
+	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/server/grpc"
 	internalhttp "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/server/http"
 	storage2 "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/storage"
 	memorystorage "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/storage/memory"
@@ -59,9 +61,13 @@ func main() {
 	} else {
 		storage = memorystorage.NewLocalStorage(logg.WithModule("localStorage"))
 	}
-	calendar := app.New(logg.WithModule("app"), storage)
+	calendar := app.New(logg.WithModule("app"), controllers.NewCalendarHandler(storage, &cfg))
 
-	server := internalhttp.NewServer(cfg, *logg, calendar)
+	httpServer := internalhttp.NewHttpServer(cfg, *logg, calendar)
+	if httpServer == nil {
+		logg.Fatal("failed to start http server")
+	}
+	grpcServer := grpc.NewGrpcServer(cfg, logg, calendar)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -70,16 +76,21 @@ func main() {
 		defer wg.Done()
 		<-ctx.Done()
 
-		if err := server.Stop(ctx); err != nil {
-			logg.Error("failed to stop http server " + err.Error())
+		if err := httpServer.Stop(ctx); err != nil {
+			logg.Error("failed to stop http httpServer " + err.Error())
 		}
+		grpcServer.Stop()
 	}()
 
-	logg.Info("calendar is running...")
-
-	if err := server.Start(); err != nil {
+	if err := httpServer.Start(); err != nil {
 		cancel()
-		logg.Fatal("failed to start http server:" + err.Error())
+		logg.Fatal("failed to start http httpServer:" + err.Error())
 	}
+
+	if err := grpcServer.Start(); err != nil {
+		cancel()
+		logg.Fatal("failed to start grpc grpcServer:" + err.Error())
+	}
+	logg.Info("calendar is running...")
 	wg.Wait()
 }

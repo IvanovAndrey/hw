@@ -3,10 +3,16 @@ package internalhttp
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/configuration"
+	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/proto"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type Server struct {
@@ -15,7 +21,9 @@ type Server struct {
 	app        Application
 }
 
-type Application interface{}
+type Application interface {
+	proto.CalendarServer
+}
 
 type Logger interface {
 	Debug(msg string)
@@ -25,12 +33,27 @@ type Logger interface {
 	Fatal(msg string)
 }
 
-func NewServer(cfg *configuration.Config, logger Logger, app Application) *Server {
+func NewHttpServer(cfg *configuration.Config, logger Logger, app Application) *Server {
+	gw := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard,
+		&runtime.HTTPBodyMarshaler{
+			Marshaler: &runtime.JSONPb{
+				MarshalOptions: protojson.MarshalOptions{
+					UseProtoNames:   true,
+					EmitUnpopulated: true,
+				},
+				UnmarshalOptions: protojson.UnmarshalOptions{
+					DiscardUnknown: true,
+				},
+			},
+		}))
+
+	if err := proto.RegisterCalendarHandlerFromEndpoint(context.Background(), gw, "127.0.0.1:"+strconv.Itoa(int(cfg.System.Grpc.Port)),
+		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}); err != nil {
+		return nil
+	}
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/livez", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("OK"))
-	})
+	mux.Handle("/", gw)
 
 	httpServer := &http.Server{
 		Addr:         cfg.System.HTTP.Address,

@@ -196,7 +196,7 @@ func (s *DBStorage) EventGet(ctx context.Context, req *models.EventIDReq) (*mode
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			s.logger.Warn("event not found id=" + req.ID)
-			return nil, calendarErrors.ErrNotFound
+			return nil, calendarErrors.ErrEventNotFound
 		}
 		s.logger.Error("get failed: " + err.Error())
 		return nil, fmt.Errorf("get event: %w", err)

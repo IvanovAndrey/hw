@@ -63,7 +63,7 @@ func (s *LocalStorage) EventEdit(_ context.Context, req *models.EditEventReq) (*
 	event, ok := s.events[req.ID]
 	if !ok {
 		s.logger.Error("event not found id=" + req.ID)
-		return nil, fmt.Errorf("event edit: %w", errors.ErrNotFound)
+		return nil, fmt.Errorf("event edit: %w", errors.ErrEventNotFound)
 	}
 
 	updated := *event
@@ -119,7 +119,7 @@ func (s *LocalStorage) EventGet(_ context.Context, req *models.EventIDReq) (*mod
 	event, ok := s.events[req.ID]
 	if !ok {
 		s.logger.Error("event not found id=" + req.ID)
-		return nil, fmt.Errorf("event get: %w", errors.ErrNotFound)
+		return nil, fmt.Errorf("event get: %w", errors.ErrEventNotFound)
 	}
 
 	cpy := *event

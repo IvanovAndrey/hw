@@ -99,7 +99,7 @@ func TestDeleteEvent(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = store.EventGet(ctx, &models.EventIDReq{ID: event.ID})
-	assert.ErrorIs(t, err, errors.ErrNotFound)
+	assert.ErrorIs(t, err, errors.ErrEventNotFound)
 }
 
 func TestGetEventList(t *testing.T) {
@@ -125,7 +125,7 @@ func TestGetEvent_NotFound(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := store.EventGet(ctx, &models.EventIDReq{ID: "non-existent-id"})
-	assert.ErrorIs(t, err, errors.ErrNotFound)
+	assert.ErrorIs(t, err, errors.ErrEventNotFound)
 }
 
 func TestEditEvent_NotFound(t *testing.T) {
@@ -139,7 +139,7 @@ func TestEditEvent_NotFound(t *testing.T) {
 	}
 
 	_, err := store.EventEdit(ctx, req)
-	assert.ErrorIs(t, err, errors.ErrNotFound)
+	assert.ErrorIs(t, err, errors.ErrEventNotFound)
 }
 
 func TestDeleteEvent_NotFound(t *testing.T) {
