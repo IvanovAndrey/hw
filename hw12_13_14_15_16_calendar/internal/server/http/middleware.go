@@ -1,9 +1,9 @@
 package internalhttp
 
 import (
+	"fmt"
 	"net"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -28,17 +28,19 @@ func loggingMiddleware(log Logger, next http.Handler) http.Handler {
 
 		duration := time.Since(start)
 
-		log.Info(
-			"Request handled | " +
-				"IP=" + ip + " | " +
-				"Time=" + start.Format(time.RFC3339) + " | " +
-				"Method=" + r.Method + " | " +
-				"Path=" + r.URL.Path + " | " +
-				"Proto=" + r.Proto + " | " +
-				"Status=" + http.StatusText(rw.statusCode) + " (" + strconv.Itoa(rw.statusCode) + ") | " +
-				"Latency=" + duration.String() + " | " +
-				"UserAgent=" + userAgent(r),
-		)
+		log.Info(fmt.Sprintf(
+			"Request handled | IP=%s | Time=%s | Method=%s | Path=%s |"+
+				" Proto=%s | Status=%s (%d) | Latency=%s | UserAgent=%s",
+			ip,
+			start.Format(time.RFC3339),
+			r.Method,
+			r.URL.Path,
+			r.Proto,
+			http.StatusText(rw.statusCode),
+			rw.statusCode,
+			duration.String(),
+			userAgent(r),
+		))
 	})
 }
 

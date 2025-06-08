@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/configuration"
@@ -14,7 +13,7 @@ import (
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/logger"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/server/grpc"
 	internalhttp "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/server/http"
-	storage2 "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/storage"
+	storageInterface "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/storage"
 	memorystorage "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/storage/memory"
 	sqlstorage "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/storage/sql"
 )
@@ -44,7 +43,7 @@ func main() {
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
-	var storage storage2.Storage
+	var storage storageInterface.Storage
 	if cfg.System.Database.Enable {
 		dbCfg := sqlstorage.DBConfig{
 			Host:     cfg.System.Database.Host,
@@ -69,19 +68,6 @@ func main() {
 	}
 	grpcServer := grpc.NewGrpcServer(cfg, logg, calendar)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		<-ctx.Done()
-
-		if err := httpServer.Stop(ctx); err != nil {
-			logg.Error("failed to stop http httpServer " + err.Error())
-		}
-		grpcServer.Stop()
-	}()
-
 	if err := httpServer.Start(); err != nil {
 		cancel()
 		logg.Fatal("failed to start http httpServer:" + err.Error())
@@ -91,6 +77,17 @@ func main() {
 		cancel()
 		logg.Fatal("failed to start grpc grpcServer:" + err.Error())
 	}
+
 	logg.Info("calendar is running...")
-	wg.Wait()
+
+	if err := server.Start(); err != nil {
+		cancel()
+		logg.Fatal("failed to start http server:" + err.Error())
+	}
+
+	<-ctx.Done()
+	if err := server.Stop(ctx); err != nil {
+		logg.Error("failed to stop http server " + err.Error())
+	}
+	grpcServer.Stop()
 }

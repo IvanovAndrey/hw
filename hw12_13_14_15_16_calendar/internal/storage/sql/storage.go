@@ -2,6 +2,7 @@ package sqlstorage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	calendarErrors "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/errors"
@@ -9,7 +10,6 @@ import (
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/storage/models"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/pkg/errors"
 )
 
 type DBConfig struct {
