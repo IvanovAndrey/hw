@@ -33,7 +33,7 @@ type Logger interface {
 	Fatal(msg string)
 }
 
-func NewHttpServer(cfg *configuration.Config, logger Logger, app Application) *Server {
+func NewHTTPServer(cfg *configuration.Config, logger Logger, app Application) *Server {
 	gw := runtime.NewServeMux(runtime.WithMarshalerOption(runtime.MIMEWildcard,
 		&runtime.HTTPBodyMarshaler{
 			Marshaler: &runtime.JSONPb{
@@ -47,7 +47,10 @@ func NewHttpServer(cfg *configuration.Config, logger Logger, app Application) *S
 			},
 		}))
 
-	if err := proto.RegisterCalendarHandlerFromEndpoint(context.Background(), gw, "127.0.0.1:"+strconv.Itoa(int(cfg.System.Grpc.Port)),
+	if err := proto.RegisterCalendarHandlerFromEndpoint(
+		context.Background(),
+		gw,
+		"127.0.0.1:"+strconv.Itoa(int(cfg.System.Grpc.Port)),
 		[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}); err != nil {
 		return nil
 	}

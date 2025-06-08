@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"errors"
 
 	calendarErrors "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/errors"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/proto"
@@ -47,15 +46,8 @@ func (a *App) CreateEvent(ctx context.Context, req *proto.CreateEventReq) (*prot
 
 	res, err := a.eventHandler.CreateEvent(ctx, req)
 	if err != nil {
-		if errors.Is(err, calendarErrors.ErrEventNotFound) {
-			return nil, status.Errorf(codes.NotFound, "event not found: %v", err)
-		}
-		if errors.Is(err, calendarErrors.ErrDateBusy) {
-			return nil, status.Errorf(codes.AlreadyExists, "date busy: %v", err)
-		}
-		return nil, status.Errorf(codes.Internal, "failed to create event: %v", err)
+		return nil, calendarErrors.MakeGrpcError(err)
 	}
-
 	return res, nil
 }
 
@@ -66,15 +58,8 @@ func (a *App) EditEvent(ctx context.Context, req *proto.EditEventReq) (*proto.Ev
 
 	res, err := a.eventHandler.EditEvent(ctx, req)
 	if err != nil {
-		if errors.Is(err, calendarErrors.ErrEventNotFound) {
-			return nil, status.Errorf(codes.NotFound, "event not found: %v", err)
-		}
-		if errors.Is(err, calendarErrors.ErrDateBusy) {
-			return nil, status.Errorf(codes.AlreadyExists, "date busy: %v", err)
-		}
-		return nil, status.Errorf(codes.Internal, "failed to create event: %v", err)
+		return nil, calendarErrors.MakeGrpcError(err)
 	}
-
 	return res, nil
 }
 
@@ -85,15 +70,8 @@ func (a *App) GetEvent(ctx context.Context, req *proto.EventByIdReq) (*proto.Eve
 
 	res, err := a.eventHandler.GetEvent(ctx, req)
 	if err != nil {
-		if errors.Is(err, calendarErrors.ErrEventNotFound) {
-			return nil, status.Errorf(codes.NotFound, "event not found: %v", err)
-		}
-		if errors.Is(err, calendarErrors.ErrDateBusy) {
-			return nil, status.Errorf(codes.AlreadyExists, "date busy: %v", err)
-		}
-		return nil, status.Errorf(codes.Internal, "failed to create event: %v", err)
+		return nil, calendarErrors.MakeGrpcError(err)
 	}
-
 	return res, nil
 }
 
@@ -104,15 +82,8 @@ func (a *App) DeleteEvent(ctx context.Context, req *proto.EventByIdReq) (*emptyp
 
 	res, err := a.eventHandler.DeleteEvent(ctx, req)
 	if err != nil {
-		if errors.Is(err, calendarErrors.ErrEventNotFound) {
-			return nil, status.Errorf(codes.NotFound, "event not found: %v", err)
-		}
-		if errors.Is(err, calendarErrors.ErrDateBusy) {
-			return nil, status.Errorf(codes.AlreadyExists, "date busy: %v", err)
-		}
-		return nil, status.Errorf(codes.Internal, "failed to create event: %v", err)
+		return nil, calendarErrors.MakeGrpcError(err)
 	}
-
 	return res, nil
 }
 
@@ -123,14 +94,7 @@ func (a *App) GetEventList(ctx context.Context, req *proto.GetEventListReq) (*pr
 
 	res, err := a.eventHandler.GetEventList(ctx, req)
 	if err != nil {
-		if errors.Is(err, calendarErrors.ErrEventNotFound) {
-			return nil, status.Errorf(codes.NotFound, "event not found: %v", err)
-		}
-		if errors.Is(err, calendarErrors.ErrDateBusy) {
-			return nil, status.Errorf(codes.AlreadyExists, "date busy: %v", err)
-		}
-		return nil, status.Errorf(codes.Internal, "failed to create event: %v", err)
+		return nil, calendarErrors.MakeGrpcError(err)
 	}
-
 	return res, nil
 }

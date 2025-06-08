@@ -206,15 +206,14 @@ func (s *DBStorage) EventGet(ctx context.Context, req *models.EventIDReq) (*mode
 	return &e, nil
 }
 
-func (s *DBStorage) EventGetList(ctx context.Context, req *models.CreateEventReq) (*models.GetEventListResp, error) {
+func (s *DBStorage) EventGetList(ctx context.Context, _ *models.GetEventListReq) (*models.GetEventListResp, error) {
 	sql := `
 		SELECT id, title, start_time, end_time, description, user_id, notify_before
 		FROM calendar.events
-		WHERE user_id = $1
 		ORDER BY start_time`
 	s.logger.Debug("SQL: " + sql)
 
-	rows, err := s.DB.Query(ctx, sql, req.User)
+	rows, err := s.DB.Query(ctx, sql)
 	if err != nil {
 		s.logger.Error("list query failed: " + err.Error())
 		return nil, fmt.Errorf("get event list: %w", err)
@@ -239,6 +238,6 @@ func (s *DBStorage) EventGetList(ctx context.Context, req *models.CreateEventReq
 		events = append(events, e)
 	}
 
-	s.logger.Debug(fmt.Sprintf("event list fetched: user=%s count=%d", req.User, len(events)))
+	s.logger.Debug(fmt.Sprintf("event list fetched: count=%d", len(events)))
 	return &models.GetEventListResp{Data: events}, nil
 }

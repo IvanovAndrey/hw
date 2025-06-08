@@ -127,20 +127,18 @@ func (s *LocalStorage) EventGet(_ context.Context, req *models.EventIDReq) (*mod
 	return &cpy, nil
 }
 
-func (s *LocalStorage) EventGetList(_ context.Context, req *models.CreateEventReq) (*models.GetEventListResp, error) {
-	s.logger.Debug("EventGetList called for user=" + req.User)
+func (s *LocalStorage) EventGetList(_ context.Context, _ *models.GetEventListReq) (*models.GetEventListResp, error) {
+	s.logger.Debug("EventGetList called=")
 
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var result []models.Event
+	result := make([]models.Event, 0, len(s.events))
 	for _, ev := range s.events {
-		if ev.User == req.User {
-			result = append(result, *ev)
-		}
+		result = append(result, *ev)
 	}
 
-	s.logger.Debug(fmt.Sprintf("event list returned user=%s count=%d", req.User, len(result)))
+	s.logger.Debug(fmt.Sprintf("event list returned count=%d", len(result)))
 	return &models.GetEventListResp{Data: result}, nil
 }
 

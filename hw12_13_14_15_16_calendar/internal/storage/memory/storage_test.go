@@ -115,7 +115,7 @@ func TestGetEventList(t *testing.T) {
 	_, _ = store.EventCreate(ctx, req1)
 	_, _ = store.EventCreate(ctx, req2)
 
-	list, err := store.EventGetList(ctx, req1)
+	list, err := store.EventGetList(ctx, &models.GetEventListReq{})
 	assert.NoError(t, err)
 	assert.Len(t, list.Data, 2)
 }
@@ -173,7 +173,7 @@ func TestConcurrentAccess(t *testing.T) {
 
 	wg.Wait()
 
-	list, err := store.EventGetList(ctx, &models.CreateEventReq{User: "user-concurrent"})
+	list, err := store.EventGetList(ctx, &models.GetEventListReq{})
 	assert.NoError(t, err)
 	assert.Len(t, list.Data, eventCount)
 }
@@ -204,7 +204,7 @@ func TestConcurrentCreateAndRead(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			_, err := store.EventGetList(ctx, &models.CreateEventReq{User: "user-cr-read"})
+			_, err := store.EventGetList(ctx, &models.GetEventListReq{})
 			assert.NoError(t, err)
 		}()
 	}

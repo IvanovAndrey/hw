@@ -64,11 +64,15 @@ func (m *Event) validate(all bool) error {
 
 	// no validation rules for EndTime
 
-	// no validation rules for Description
-
 	// no validation rules for User
 
-	// no validation rules for NotifyBefore
+	if m.Description != nil {
+		// no validation rules for Description
+	}
+
+	if m.NotifyBefore != nil {
+		// no validation rules for NotifyBefore
+	}
 
 	if len(errors) > 0 {
 		return EventMultiError(errors)

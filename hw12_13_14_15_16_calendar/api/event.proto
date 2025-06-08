@@ -11,9 +11,9 @@ message Event {
   string title = 2 [json_name = "title"];
   string date = 3 [json_name = "date"];
   string end_time = 4 [json_name = "end_time"];
-  string description = 5 [json_name = "description"];
+  optional string description = 5 [json_name = "description"];
   string user = 6 [json_name = "user"];
-  string notify_before = 7 [json_name = "notify_before"];
+  optional string notify_before = 7 [json_name = "notify_before"];
 }
 
 message CreateEventReq {

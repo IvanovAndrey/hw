@@ -63,7 +63,7 @@ func main() {
 	}
 	calendar := app.New(logg.WithModule("app"), controllers.NewCalendarHandler(storage, &cfg))
 
-	httpServer := internalhttp.NewHttpServer(cfg, *logg, calendar)
+	httpServer := internalhttp.NewHTTPServer(cfg, *logg, calendar)
 	if httpServer == nil {
 		logg.Fatal("failed to start http server")
 	}
