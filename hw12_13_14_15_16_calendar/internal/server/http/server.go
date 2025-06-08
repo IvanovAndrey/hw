@@ -2,11 +2,11 @@ package internalhttp
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/configuration"
-	"github.com/pkg/errors"
 )
 
 type Server struct {
