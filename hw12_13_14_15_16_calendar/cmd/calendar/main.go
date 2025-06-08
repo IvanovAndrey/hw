@@ -66,6 +66,7 @@ func main() {
 	if httpServer == nil {
 		logg.Fatal("failed to start http server")
 	}
+
 	grpcServer := grpc.NewGrpcServer(cfg, logg, calendar)
 
 	if err := httpServer.Start(); err != nil {
@@ -80,13 +81,8 @@ func main() {
 
 	logg.Info("calendar is running...")
 
-	if err := server.Start(); err != nil {
-		cancel()
-		logg.Fatal("failed to start http server:" + err.Error())
-	}
-
 	<-ctx.Done()
-	if err := server.Stop(ctx); err != nil {
+	if err := httpServer.Stop(ctx); err != nil {
 		logg.Error("failed to stop http server " + err.Error())
 	}
 	grpcServer.Stop()

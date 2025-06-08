@@ -85,7 +85,12 @@ func TestCreateEvent(t *testing.T) {
 
 	t.Run("storage error", func(t *testing.T) {
 		a, st := newTestApp()
-		req := &proto.CreateEventReq{Title: "test"}
+		req := &proto.CreateEventReq{
+			Date:    "1",
+			User:    "1",
+			EndTime: "1",
+			Title:   "test",
+		}
 		st.On("CreateEvent", mock.Anything, req).Return(&proto.Event{}, errors.New("db error"))
 
 		_, err := a.CreateEvent(context.Background(), req)
