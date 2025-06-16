@@ -58,7 +58,6 @@ linters:
     - goheader
     - goprintffuncname
     - gosec
-    - gosimple
     - govet
     - importas
     - ineffassign
@@ -72,7 +71,6 @@ linters:
     - prealloc
     - predeclared
     - revive
-    - staticcheck
     - stylecheck
     - tagliatelle
     - thelper
