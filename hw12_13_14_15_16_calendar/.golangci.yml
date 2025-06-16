@@ -57,7 +57,6 @@ linters:
     - gocyclo
     - godot
     - gofmt
-    - gofumpt
     - goheader
     - goprintffuncname
     - gosec
@@ -79,7 +78,6 @@ linters:
     - stylecheck
     - tagliatelle
     - thelper
-    - typecheck
     - unconvert
     - unparam
     - unused
