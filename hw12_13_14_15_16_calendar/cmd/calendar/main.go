@@ -45,15 +45,7 @@ func main() {
 
 	var storage storageInterface.Storage
 	if cfg.System.Database.Enable {
-		dbCfg := sqlstorage.DBConfig{
-			Host:     cfg.System.Database.Host,
-			Port:     cfg.System.Database.Port,
-			User:     cfg.System.Database.User,
-			Password: cfg.System.Database.Password,
-			DBName:   cfg.System.Database.DBName,
-			SSLMode:  cfg.System.Database.SSLMode,
-		}
-		storage, err = sqlstorage.NewStorage(ctx, dbCfg, logg.WithModule("sqlStorage"))
+		storage, err = sqlstorage.NewStorage(ctx, cfg, logg.WithModule("sqlStorage"))
 		if err != nil {
 			logg.Fatal("failed to connect to db")
 		}
