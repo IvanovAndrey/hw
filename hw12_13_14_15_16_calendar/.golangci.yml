@@ -71,7 +71,6 @@ linters:
     - prealloc
     - predeclared
     - revive
-    - stylecheck
     - tagliatelle
     - thelper
     - unconvert
