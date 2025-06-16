@@ -3,21 +3,23 @@ package main
 import (
 	"context"
 	"flag"
-	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
+	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/configuration"
+	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/consts"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/app"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/server/http"
+	storageInterface "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/storage"
 	memorystorage "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/storage/memory"
+	sqlstorage "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/storage/sql"
 )
 
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "/etc/calendar/config.toml", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "./../../configs/config.yaml", "Path to configuration file")
 }
 
 func main() {
@@ -28,34 +30,47 @@ func main() {
 		return
 	}
 
-	config := NewConfig()
-	logg := logger.New(config.Logger.Level)
+	cfg, err := configuration.LoadConfig(configFile)
+	if err != nil {
+		panic(err)
+	}
 
-	storage := memorystorage.New()
-	calendar := app.New(logg, storage)
-
-	server := internalhttp.NewServer(logg, calendar)
+	logg := logger.NewLogger(consts.AppName, release, cfg.Logger.Level)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
-	go func() {
-		<-ctx.Done()
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-		defer cancel()
-
-		if err := server.Stop(ctx); err != nil {
-			logg.Error("failed to stop http server: " + err.Error())
+	var storage storageInterface.Storage
+	if cfg.System.Database.Enable {
+		dbCfg := sqlstorage.DBConfig{
+			Host:     cfg.System.Database.Host,
+			Port:     cfg.System.Database.Port,
+			User:     cfg.System.Database.User,
+			Password: cfg.System.Database.Password,
+			DBName:   cfg.System.Database.DBName,
+			SSLMode:  cfg.System.Database.SSLMode,
 		}
-	}()
+		storage, err = sqlstorage.NewStorage(ctx, dbCfg, logg.WithModule("sqlStorage"))
+		if err != nil {
+			logg.Fatal("failed to connect to db")
+		}
+	} else {
+		storage = memorystorage.NewLocalStorage(logg.WithModule("localStorage"))
+	}
+	calendar := app.New(logg.WithModule("app"), storage)
+
+	server := internalhttp.NewServer(cfg, *logg, calendar)
 
 	logg.Info("calendar is running...")
 
-	if err := server.Start(ctx); err != nil {
-		logg.Error("failed to start http server: " + err.Error())
+	if err := server.Start(); err != nil {
 		cancel()
-		os.Exit(1) //nolint:gocritic
+		logg.Fatal("failed to start http server:" + err.Error())
+	}
+
+	<-ctx.Done()
+	if err := server.Stop(ctx); err != nil {
+		logg.Error("failed to stop http server " + err.Error())
 	}
 }
