@@ -16,6 +16,7 @@ linters-settings:
           - "!$test"
         allow:
           - $gostd
+          - github.com/schollz/progressbar/v3
       Test:
         files:
           - $test
