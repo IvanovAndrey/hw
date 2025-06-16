@@ -70,7 +70,6 @@ linters:
     - nolintlint
     - prealloc
     - predeclared
-    - revive
     - tagliatelle
     - thelper
     - unconvert
