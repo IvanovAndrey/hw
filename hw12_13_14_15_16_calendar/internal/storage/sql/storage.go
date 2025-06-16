@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	calendarErrors "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/errors"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/logger"
@@ -240,4 +241,40 @@ func (s *DBStorage) EventGetList(ctx context.Context, _ *models.GetEventListReq)
 
 	s.logger.Debug(fmt.Sprintf("event list fetched: count=%d", len(events)))
 	return &models.GetEventListResp{Data: events}, nil
+}
+
+func (s *DBStorage) EventsToNotify(ctx context.Context) ([]models.Event, error) {
+	query := `
+		SELECT id, title, start_time, end_time, description, user_id, notify_before
+		FROM events
+		WHERE notify_before IS NOT NULL
+		AND start_time - notify_before <= $1
+	`
+
+	now := time.Now()
+	rows, err := s.DB.Query(ctx, query, now)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []models.Event
+	for rows.Next() {
+		var ev models.Event
+		err := rows.Scan(&ev.ID, &ev.Title, &ev.Date, &ev.EndTime, &ev.Description, &ev.User, &ev.NotifyBefore)
+		if err != nil {
+			return nil, err
+		}
+		events = append(events, ev)
+	}
+
+	return events, rows.Err()
+}
+
+func (s *DBStorage) DeleteOldEvents(ctx context.Context, cutoff time.Time) error {
+	_, err := s.DB.Exec(ctx, `
+		DELETE FROM events
+		WHERE end_time < $1
+	`, cutoff)
+	return err
 }

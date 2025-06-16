@@ -18,6 +18,16 @@ type LocalStorage struct {
 	logger logger.Logger
 }
 
+func (s *LocalStorage) EventsToNotify(ctx context.Context) ([]models.Event, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *LocalStorage) DeleteOldEvents(ctx context.Context, cutoff time.Time) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewLocalStorage(logger logger.Logger) *LocalStorage {
 	return &LocalStorage{
 		events: make(map[string]*models.Event),
