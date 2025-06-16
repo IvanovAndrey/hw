@@ -1,0 +1,68 @@
+syntax = "proto3";
+package calendar_proto;
+
+option go_package = "github.com/IvanovAndrey/hw/hw12_13_14_15_16_calendar/proto";
+
+import "google/protobuf/empty.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "google/api/annotations.proto";
+import "event.proto";
+
+
+service Calendar {
+  rpc GetLiveZ(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      get : "/api/v1/livez"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "system"
+    };
+  }
+
+  rpc CreateEvent(CreateEventReq) returns (Event) {
+    option (google.api.http) = {
+      post : "/api/v1/event",
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "event"
+    };
+  }
+
+  rpc EditEvent(EditEventReq) returns (Event) {
+    option (google.api.http) = {
+      patch : "/api/v1/event",
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "event"
+    };
+  }
+
+  rpc GetEvent(EventByIdReq) returns (Event) {
+    option (google.api.http) = {
+      get : "/api/v1/event/{event_id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "event"
+    };
+  }
+
+  rpc DeleteEvent(EventByIdReq) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete : "/api/v1/event/{event_id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "event"
+    };
+  }
+
+  rpc GetEventList(GetEventListReq) returns (GetEventListRes) {
+    option (google.api.http) = {
+      get : "/api/v1/events"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: "event"
+    };
+  }
+}

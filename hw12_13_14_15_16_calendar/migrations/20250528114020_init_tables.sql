@@ -8,7 +8,7 @@ create table if not exists calendar.events
     title         varchar(64) not null,
     start_time    timestamp with time zone not null,
     end_time      timestamp with time zone not null,
-                                description   varchar(1000),
+    description   varchar(1000),
     user_id       uuid not null,
     notify_before interval
     );

@@ -1,0 +1,48 @@
+syntax = "proto3";
+package calendar_proto;
+
+option go_package = "github.com/IvanovAndrey/hw/hw12_13_14_15_16_calendar/proto";
+
+import "google/api/field_behavior.proto";
+import "validate/validate.proto";
+
+message Event {
+  string id = 1 [json_name = "id"];
+  string title = 2 [json_name = "title"];
+  string date = 3 [json_name = "date"];
+  string end_time = 4 [json_name = "end_time"];
+  optional string description = 5 [json_name = "description"];
+  string user = 6 [json_name = "user"];
+  optional string notify_before = 7 [json_name = "notify_before"];
+}
+
+message CreateEventReq {
+  string title = 1 [json_name = "title", (validate.rules).string.min_len = 1, (google.api.field_behavior) = REQUIRED];
+  string date = 2 [json_name = "date", (validate.rules).string.min_len = 1, (google.api.field_behavior) = REQUIRED];
+  string end_time = 3 [json_name = "end_time", (validate.rules).string.min_len = 1, (google.api.field_behavior) = REQUIRED];
+  optional string description = 4 [json_name = "description"];
+  string user = 5 [json_name = "user", (validate.rules).string.min_len = 1, (google.api.field_behavior) = REQUIRED];
+  optional string notify_before = 6 [json_name = "notify_before"];
+}
+
+message EditEventReq {
+  string id = 1 [json_name = "id", (validate.rules).string.min_len = 1, (google.api.field_behavior) = REQUIRED];
+  optional string title = 2 [json_name = "title"];
+  optional string date = 3 [json_name = "date"];
+  optional string end_time = 4 [json_name = "end_time"];
+  optional string description = 5 [json_name = "description"];
+  optional string user = 6 [json_name = "user"];
+  optional string notify_before = 7 [json_name = "notify_before"];
+}
+
+message EventByIdReq {
+  string event_id = 1 [json_name = "event_id", (validate.rules).string.min_len = 1, (google.api.field_behavior) = REQUIRED];
+}
+
+message GetEventListReq {
+  optional string filter = 1 [json_name = "filter"];
+}
+
+message GetEventListRes {
+  repeated Event data = 1 [json_name = "data"];
+}

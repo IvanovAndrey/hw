@@ -99,7 +99,7 @@ func TestDeleteEvent(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = store.EventGet(ctx, &models.EventIDReq{ID: event.ID})
-	assert.ErrorIs(t, err, errors.ErrNotFound)
+	assert.ErrorIs(t, err, errors.ErrEventNotFound)
 }
 
 func TestGetEventList(t *testing.T) {
@@ -115,7 +115,7 @@ func TestGetEventList(t *testing.T) {
 	_, _ = store.EventCreate(ctx, req1)
 	_, _ = store.EventCreate(ctx, req2)
 
-	list, err := store.EventGetList(ctx, req1)
+	list, err := store.EventGetList(ctx, &models.GetEventListReq{})
 	assert.NoError(t, err)
 	assert.Len(t, list.Data, 2)
 }
@@ -125,7 +125,7 @@ func TestGetEvent_NotFound(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := store.EventGet(ctx, &models.EventIDReq{ID: "non-existent-id"})
-	assert.ErrorIs(t, err, errors.ErrNotFound)
+	assert.ErrorIs(t, err, errors.ErrEventNotFound)
 }
 
 func TestEditEvent_NotFound(t *testing.T) {
@@ -139,7 +139,7 @@ func TestEditEvent_NotFound(t *testing.T) {
 	}
 
 	_, err := store.EventEdit(ctx, req)
-	assert.ErrorIs(t, err, errors.ErrNotFound)
+	assert.ErrorIs(t, err, errors.ErrEventNotFound)
 }
 
 func TestDeleteEvent_NotFound(t *testing.T) {
@@ -173,7 +173,7 @@ func TestConcurrentAccess(t *testing.T) {
 
 	wg.Wait()
 
-	list, err := store.EventGetList(ctx, &models.CreateEventReq{User: "user-concurrent"})
+	list, err := store.EventGetList(ctx, &models.GetEventListReq{})
 	assert.NoError(t, err)
 	assert.Len(t, list.Data, eventCount)
 }
@@ -204,7 +204,7 @@ func TestConcurrentCreateAndRead(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			_, err := store.EventGetList(ctx, &models.CreateEventReq{User: "user-cr-read"})
+			_, err := store.EventGetList(ctx, &models.GetEventListReq{})
 			assert.NoError(t, err)
 		}()
 	}
