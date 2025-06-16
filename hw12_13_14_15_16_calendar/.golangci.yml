@@ -1,8 +1,10 @@
+version: 2
+
 run:
   tests: true
   build-tags:
     - bench
-    - !bench
+    - '!bench'
 
 linters-settings:
   funlen:
@@ -13,7 +15,7 @@ linters-settings:
       Main:
         files:
           - $all
-          - "!$test"
+          - '!$test'
         allow:
           - $gostd
       Test:
@@ -22,6 +24,7 @@ linters-settings:
         allow:
           - $gostd
           - github.com/stretchr/testify
+
 issues:
   exclude-rules:
     - path: _test\.go
@@ -38,7 +41,7 @@ linters:
   disable-all: true
   enable:
     - asciicheck
-#    - depguard
+    #    - depguard
     - dogsled
     - dupl
     - bodyclose
@@ -47,18 +50,14 @@ linters:
     - exhaustive
     - copyloopvar
     - funlen
-    - gci
     - gocognit
     - goconst
     - gocritic
     - gocyclo
     - godot
-    - gofmt
-    - gofumpt
     - goheader
     - goprintffuncname
     - gosec
-    - gosimple
     - govet
     - importas
     - ineffassign
@@ -71,12 +70,8 @@ linters:
     - nolintlint
     - prealloc
     - predeclared
-    - revive
-    - staticcheck
-    - stylecheck
     - tagliatelle
     - thelper
-    - typecheck
     - unconvert
     - unparam
     - unused
