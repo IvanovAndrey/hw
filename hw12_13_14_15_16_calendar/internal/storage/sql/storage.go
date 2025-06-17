@@ -28,15 +28,15 @@ type DBStorage struct {
 	logger logger.Logger
 }
 
-func NewStorage(ctx context.Context, cfg *configuration.Config, logger logger.Logger) (*DBStorage, error) {
+func NewStorage(ctx context.Context, cfg *configuration.DatabaseConf, logger logger.Logger) (*DBStorage, error) {
 	connStr := fmt.Sprintf(
 		"user=%s password=%s host=%s port=%d dbname=%s sslmode=%s",
-		cfg.System.Database.User,
-		cfg.System.Database.Password,
-		cfg.System.Database.Host,
-		cfg.System.Database.Port,
-		cfg.System.Database.DBName,
-		cfg.System.Database.SSLMode,
+		cfg.User,
+		cfg.Password,
+		cfg.Host,
+		cfg.Port,
+		cfg.DBName,
+		cfg.SSLMode,
 	)
 
 	dbPool, err := pgxpool.New(ctx, connStr)

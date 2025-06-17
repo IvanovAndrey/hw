@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/configuration"
+	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/consts"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/logger"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/rmq"
 	storageInterface "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/storage"
@@ -27,12 +28,12 @@ func init() {
 func main() {
 	flag.Parse()
 
-	cfg, err := configuration.LoadConfig(configFile)
+	cfg, err := configuration.LoadSchedulerConfig(configFile)
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	logg := logger.NewLogger(cfg.Logger.Level)
+	logg := logger.NewLogger(consts.SchedulerAppName, "", cfg.Logger.Level) //TODO
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -46,15 +47,7 @@ func main() {
 
 	var storage storageInterface.Storage
 	if cfg.System.Database.Enable {
-		dbCfg := sqlstorage.DBConfig{
-			Host:     cfg.System.Database.Host,
-			Port:     cfg.System.Database.Port,
-			User:     cfg.System.Database.User,
-			Password: cfg.System.Database.Password,
-			DBName:   cfg.System.Database.DBName,
-			SSLMode:  cfg.System.Database.SSLMode,
-		}
-		storage, err = sqlstorage.NewStorage(ctx, dbCfg, logg.WithModule("sqlStorage"))
+		storage, err = sqlstorage.NewStorage(ctx, &cfg.System.Database, logg.WithModule("sqlStorage"))
 		if err != nil {
 			logg.Fatal("failed to connect to db")
 		}
@@ -83,10 +76,10 @@ func main() {
 			}
 			for _, ev := range events {
 				note := rmq.Notification{
-					EventID:  ev.ID,
-					Title:    ev.Title,
-					DateTime: ev.Date,
-					UserID:   ev.User,
+					EventID: ev.ID,
+					Title:   ev.Title,
+					//DateTime: ev.Date, //TODO
+					UserID: ev.User,
 				}
 				err := rmqClient.PublishNotification(ctx, note)
 				if err != nil {

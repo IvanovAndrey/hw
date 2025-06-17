@@ -21,7 +21,9 @@ import (
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "./../../configs/config.yaml", "Path to configuration file")
+	flag.StringVar(&configFile, "config",
+		"./../../configs/calendar_config.yaml",
+		"Path to configuration file")
 }
 
 func main() {
@@ -45,7 +47,7 @@ func main() {
 
 	var storage storageInterface.Storage
 	if cfg.System.Database.Enable {
-		storage, err = sqlstorage.NewStorage(ctx, cfg, logg.WithModule("sqlStorage"))
+		storage, err = sqlstorage.NewStorage(ctx, &cfg.System.Database, logg.WithModule("sqlStorage"))
 		if err != nil {
 			logg.Fatal("failed to connect to db")
 		}

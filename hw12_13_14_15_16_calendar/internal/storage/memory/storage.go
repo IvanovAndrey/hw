@@ -18,16 +18,6 @@ type LocalStorage struct {
 	logger logger.Logger
 }
 
-func (s *LocalStorage) EventsToNotify(ctx context.Context) ([]models.Event, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s *LocalStorage) DeleteOldEvents(ctx context.Context, cutoff time.Time) error {
-	//TODO implement me
-	panic("implement me")
-}
-
 func NewLocalStorage(logger logger.Logger) *LocalStorage {
 	return &LocalStorage{
 		events: make(map[string]*models.Event),
@@ -150,6 +140,46 @@ func (s *LocalStorage) EventGetList(_ context.Context, _ *models.GetEventListReq
 
 	s.logger.Debug(fmt.Sprintf("event list returned count=%d", len(result)))
 	return &models.GetEventListResp{Data: result}, nil
+}
+
+func (s *LocalStorage) EventsToNotify(_ context.Context) ([]models.Event, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	now := time.Now()
+	var result []models.Event
+	for _, event := range s.events {
+		eventTime, err := time.Parse(time.RFC3339, event.Date)
+		if err != nil {
+			continue
+		}
+		var notifyBefore time.Duration
+		if event.NotifyBefore != nil {
+			notifyBefore, err = time.ParseDuration(*event.NotifyBefore)
+			if err != nil {
+				notifyBefore = 0
+			}
+		}
+		notifyAt := eventTime.Add(-notifyBefore)
+		if now.After(notifyAt) && now.Before(eventTime) {
+			result = append(result, *event)
+		}
+	}
+	return result, nil
+}
+
+func (s *LocalStorage) DeleteOldEvents(_ context.Context, cutoff time.Time) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for id, event := range s.events {
+		endTime, err := time.Parse(time.RFC3339, event.EndTime)
+		if err != nil {
+			continue
+		}
+		if endTime.Before(cutoff) {
+			delete(s.events, id)
+		}
+	}
+	return nil
 }
 
 func rangesOverlap(start1Str, end1Str, start2Str, end2Str string) bool {

@@ -1,5 +1,6 @@
 package consts
 
 const (
-	AppName = "calendar"
+	AppName          = "calendar"
+	SchedulerAppName = "scheduler"
 )
