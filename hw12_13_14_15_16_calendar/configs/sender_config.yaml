@@ -5,15 +5,5 @@ rabbitmq:
   uri: amqp://guest:guest@localhost:5672/
   queue: events
 
-system:
-  database:
-    enable: false
-    host: localhost
-    port: 5432
-    db_name: calendar
-    user: postgres
-    password: ""
-    ssl_mode: disable
-
 sender:
   poll_interval: 2s

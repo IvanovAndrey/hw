@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/cmd"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/configuration"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/consts"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/logger"
@@ -33,7 +34,7 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	logg := logger.NewLogger(consts.SchedulerAppName, "", cfg.Logger.Level) //TODO
+	logg := logger.NewLogger(consts.SchedulerAppName, cmd.Release, cfg.Logger.Level)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -75,13 +76,18 @@ func main() {
 				continue
 			}
 			for _, ev := range events {
-				note := rmq.Notification{
-					EventID: ev.ID,
-					Title:   ev.Title,
-					//DateTime: ev.Date, //TODO
-					UserID: ev.User,
+				eventTime, err := time.Parse(time.RFC3339, ev.Date)
+				if err != nil {
+					logg.Error(fmt.Sprintf("invalid event date: %v", err))
+					continue
 				}
-				err := rmqClient.PublishNotification(ctx, note)
+				note := rmq.Notification{
+					EventID:  ev.ID,
+					Title:    ev.Title,
+					DateTime: eventTime,
+					UserID:   ev.User,
+				}
+				err = rmqClient.PublishNotification(ctx, note)
 				if err != nil {
 					logg.Error(fmt.Sprintf("publish notification: %v", err))
 				}

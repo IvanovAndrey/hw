@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/cmd"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/configuration"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/consts"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/app"
@@ -30,7 +31,7 @@ func main() {
 	flag.Parse()
 
 	if flag.Arg(0) == "version" {
-		printVersion()
+		cmd.PrintVersion()
 		return
 	}
 
@@ -39,7 +40,7 @@ func main() {
 		panic(err)
 	}
 
-	logg := logger.NewLogger(consts.AppName, release, cfg.Logger.Level)
+	logg := logger.NewLogger(consts.AppName, cmd.Release, cfg.Logger.Level)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)

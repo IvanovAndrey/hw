@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"encoding/json"
@@ -7,18 +7,18 @@ import (
 )
 
 var (
-	release   = "UNKNOWN"
+	Release   = "UNKNOWN"
 	buildDate = "UNKNOWN"
 	gitHash   = "UNKNOWN"
 )
 
-func printVersion() {
+func PrintVersion() {
 	if err := json.NewEncoder(os.Stdout).Encode(struct {
 		Release   string
 		BuildDate string
 		GitHash   string
 	}{
-		Release:   release,
+		Release:   Release,
 		BuildDate: buildDate,
 		GitHash:   gitHash,
 	}); err != nil {

@@ -13,10 +13,10 @@ import (
 )
 
 type Notification struct {
-	EventID  string    `json:"event_id"`
+	EventID  string    `json:"eventId"`
 	Title    string    `json:"title"`
 	DateTime time.Time `json:"datetime"`
-	UserID   string    `json:"user_id"`
+	UserID   string    `json:"userId"`
 }
 
 type Publisher interface {
