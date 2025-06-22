@@ -15,5 +15,5 @@ type Storage interface {
 
 	EventGet(ctx context.Context, req *models.EventIDReq) (*models.Event, error)
 
-	EventGetList(ctx context.Context, req *models.CreateEventReq) (*models.GetEventListResp, error)
+	EventGetList(ctx context.Context, req *models.GetEventListReq) (*models.GetEventListResp, error)
 }

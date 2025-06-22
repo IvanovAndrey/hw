@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/configuration"
 	calendarErrors "github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/errors"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/logger"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/storage/models"
@@ -26,10 +27,15 @@ type DBStorage struct {
 	logger logger.Logger
 }
 
-func NewStorage(ctx context.Context, cfg DBConfig, logger logger.Logger) (*DBStorage, error) {
+func NewStorage(ctx context.Context, cfg *configuration.Config, logger logger.Logger) (*DBStorage, error) {
 	connStr := fmt.Sprintf(
 		"user=%s password=%s host=%s port=%d dbname=%s sslmode=%s",
-		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName, cfg.SSLMode,
+		cfg.System.Database.User,
+		cfg.System.Database.Password,
+		cfg.System.Database.Host,
+		cfg.System.Database.Port,
+		cfg.System.Database.DBName,
+		cfg.System.Database.SSLMode,
 	)
 
 	dbPool, err := pgxpool.New(ctx, connStr)
@@ -107,24 +113,7 @@ func (s *DBStorage) EventEdit(ctx context.Context, req *models.EditEventReq) (*m
 		return nil, fmt.Errorf("get event for edit: %w", err)
 	}
 
-	if req.Title != nil {
-		event.Title = *req.Title
-	}
-	if req.Date != nil {
-		event.Date = *req.Date
-	}
-	if req.EndTime != nil {
-		event.EndTime = *req.EndTime
-	}
-	if req.Description != nil {
-		event.Description = req.Description
-	}
-	if req.User != nil {
-		event.User = *req.User
-	}
-	if req.NotifyBefore != nil {
-		event.NotifyBefore = req.NotifyBefore
-	}
+	event = checkRequest(req, event)
 
 	checkSQL := `
 		SELECT EXISTS (
@@ -170,6 +159,28 @@ func (s *DBStorage) EventEdit(ctx context.Context, req *models.EditEventReq) (*m
 	return event, nil
 }
 
+func checkRequest(req *models.EditEventReq, event *models.Event) *models.Event {
+	if req.Title != nil {
+		event.Title = *req.Title
+	}
+	if req.Date != nil {
+		event.Date = *req.Date
+	}
+	if req.EndTime != nil {
+		event.EndTime = *req.EndTime
+	}
+	if req.Description != nil {
+		event.Description = req.Description
+	}
+	if req.User != nil {
+		event.User = *req.User
+	}
+	if req.NotifyBefore != nil {
+		event.NotifyBefore = req.NotifyBefore
+	}
+	return event
+}
+
 func (s *DBStorage) EventDelete(ctx context.Context, req *models.EventIDReq) error {
 	sql := `DELETE FROM calendar.events WHERE id = $1`
 	s.logger.Debug("SQL: " + sql)
@@ -196,7 +207,7 @@ func (s *DBStorage) EventGet(ctx context.Context, req *models.EventIDReq) (*mode
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			s.logger.Warn("event not found id=" + req.ID)
-			return nil, calendarErrors.ErrNotFound
+			return nil, calendarErrors.ErrEventNotFound
 		}
 		s.logger.Error("get failed: " + err.Error())
 		return nil, fmt.Errorf("get event: %w", err)
@@ -206,15 +217,14 @@ func (s *DBStorage) EventGet(ctx context.Context, req *models.EventIDReq) (*mode
 	return &e, nil
 }
 
-func (s *DBStorage) EventGetList(ctx context.Context, req *models.CreateEventReq) (*models.GetEventListResp, error) {
+func (s *DBStorage) EventGetList(ctx context.Context, _ *models.GetEventListReq) (*models.GetEventListResp, error) {
 	sql := `
 		SELECT id, title, start_time, end_time, description, user_id, notify_before
 		FROM calendar.events
-		WHERE user_id = $1
 		ORDER BY start_time`
 	s.logger.Debug("SQL: " + sql)
 
-	rows, err := s.DB.Query(ctx, sql, req.User)
+	rows, err := s.DB.Query(ctx, sql)
 	if err != nil {
 		s.logger.Error("list query failed: " + err.Error())
 		return nil, fmt.Errorf("get event list: %w", err)
@@ -239,6 +249,6 @@ func (s *DBStorage) EventGetList(ctx context.Context, req *models.CreateEventReq
 		events = append(events, e)
 	}
 
-	s.logger.Debug(fmt.Sprintf("event list fetched: user=%s count=%d", req.User, len(events)))
+	s.logger.Debug(fmt.Sprintf("event list fetched: count=%d", len(events)))
 	return &models.GetEventListResp{Data: events}, nil
 }
