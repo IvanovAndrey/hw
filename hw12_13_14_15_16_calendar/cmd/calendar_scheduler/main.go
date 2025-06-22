@@ -42,30 +42,35 @@ func main() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
+	var storage storageInterface.Storage
+
+	if cfg.System.Database.Enable {
+		storage, err = sqlstorage.NewStorage(ctx, &cfg.System.Database, logg.WithModule("sqlStorage"))
+		if err != nil {
+			logg.Fatal(fmt.Sprintf("failed to connect to db: %v", err))
+		}
+	} else {
+		storage = memorystorage.NewLocalStorage(logg.WithModule("localStorage"))
+	}
+
 	go func() {
 		<-stop
 		logg.Info("shutting down scheduler")
 		cancel()
 	}()
 
-	if err := runScheduler(ctx, cfg, logg); err != nil {
+	if err := runScheduler(ctx, cfg, storage, logg); err != nil {
 		logg.Fatal(fmt.Sprintf("scheduler stopped with error: %v", err))
 	}
 }
 
-func runScheduler(ctx context.Context, cfg *configuration.SchedulerConfig, logg *logger.Logger) error {
+func runScheduler(
+	ctx context.Context,
+	cfg *configuration.SchedulerConfig,
+	storage storageInterface.Storage,
+	logg *logger.Logger,
+) error {
 	var err error
-	var storage storageInterface.Storage
-
-	if cfg.System.Database.Enable {
-		storage, err = sqlstorage.NewStorage(ctx, &cfg.System.Database, logg.WithModule("sqlStorage"))
-		if err != nil {
-			return fmt.Errorf("failed to connect to db: %w", err)
-		}
-	} else {
-		storage = memorystorage.NewLocalStorage(logg.WithModule("localStorage"))
-	}
-
 	rmqClient, err := rmq.NewRMQClient(cfg.RabbitMQ.URI, cfg.RabbitMQ.Queue)
 	if err != nil {
 		return fmt.Errorf("failed to init rmq: %w", err)
