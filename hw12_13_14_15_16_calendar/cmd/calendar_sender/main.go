@@ -45,7 +45,12 @@ func main() {
 	if err != nil {
 		logg.Fatal(fmt.Sprintf("failed to init rmq: %v", err))
 	}
-	defer rmqClient.Close()
+	defer func(rmqClient *rmq.RMQClient) {
+		err := rmqClient.Close()
+		if err != nil {
+			logg.Fatal(fmt.Sprintf("failed to close rmq client: %v", err))
+		}
+	}(rmqClient)
 
 	err = rmqClient.ConsumeNotifications(ctx, func(note rmq.Notification) {
 		logg.Info(fmt.Sprintf("[NOTIFY] EventID: %s, Title: %s, DateTime: %s, UserID: %s",

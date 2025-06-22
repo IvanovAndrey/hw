@@ -35,22 +35,32 @@ func main() {
 	}
 
 	logg := logger.NewLogger(consts.SchedulerAppName, cmd.Release, cfg.Logger.Level)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+
 	go func() {
 		<-stop
 		logg.Info("shutting down scheduler")
 		cancel()
 	}()
 
+	if err := runScheduler(ctx, cfg, logg); err != nil {
+		logg.Fatal(fmt.Sprintf("scheduler stopped with error: %v", err))
+	}
+}
+
+func runScheduler(ctx context.Context, cfg *configuration.SchedulerConfig, logg *logger.Logger) error {
+	var err error
 	var storage storageInterface.Storage
+
 	if cfg.System.Database.Enable {
 		storage, err = sqlstorage.NewStorage(ctx, &cfg.System.Database, logg.WithModule("sqlStorage"))
 		if err != nil {
-			logg.Fatal("failed to connect to db")
+			return fmt.Errorf("failed to connect to db: %w", err)
 		}
 	} else {
 		storage = memorystorage.NewLocalStorage(logg.WithModule("localStorage"))
@@ -58,9 +68,13 @@ func main() {
 
 	rmqClient, err := rmq.NewRMQClient(cfg.RabbitMQ.URI, cfg.RabbitMQ.Queue)
 	if err != nil {
-		logg.Fatal(fmt.Sprintf("failed to init rmq: %v", err))
+		return fmt.Errorf("failed to init rmq: %w", err)
 	}
-	defer rmqClient.Close()
+	defer func() {
+		if err := rmqClient.Close(); err != nil {
+			logg.Error("failed to close rmq client")
+		}
+	}()
 
 	ticker := time.NewTicker(cfg.Scheduler.Interval)
 	defer ticker.Stop()
@@ -68,33 +82,35 @@ func main() {
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			return nil
+
 		case <-ticker.C:
 			events, err := storage.EventsToNotify(ctx)
 			if err != nil {
 				logg.Error(fmt.Sprintf("query notify events: %v", err))
 				continue
 			}
+
 			for _, ev := range events {
 				eventTime, err := time.Parse(time.RFC3339, ev.Date)
 				if err != nil {
 					logg.Error(fmt.Sprintf("invalid event date: %v", err))
 					continue
 				}
+
 				note := rmq.Notification{
 					EventID:  ev.ID,
 					Title:    ev.Title,
 					DateTime: eventTime,
 					UserID:   ev.User,
 				}
-				err = rmqClient.PublishNotification(ctx, note)
-				if err != nil {
+
+				if err := rmqClient.PublishNotification(ctx, note); err != nil {
 					logg.Error(fmt.Sprintf("publish notification: %v", err))
 				}
 			}
 
-			err = storage.DeleteOldEvents(ctx, time.Now().AddDate(-1, 0, 0))
-			if err != nil {
+			if err := storage.DeleteOldEvents(ctx, time.Now().AddDate(-1, 0, 0)); err != nil {
 				logg.Error(fmt.Sprintf("cleanup old events: %v", err))
 			}
 		}
