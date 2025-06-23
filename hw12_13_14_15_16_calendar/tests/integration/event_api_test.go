@@ -58,71 +58,41 @@ func TestCreateEvent_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to send request: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			t.Fatalf("fail to close body")
+		}
+	}(resp.Body)
 }
 
 func TestCreateEvent_Conflict(t *testing.T) {
 	now := time.Now().Add(3 * time.Hour).UTC()
-
-	payload := proto.CreateEventReq{
+	payload := &proto.CreateEventReq{
 		Title:        "test event",
 		Date:         timestamppb.New(now),
 		EndTime:      timestamppb.New(now.Add(1 * time.Hour)),
 		User:         uuid.NewString(),
 		NotifyBefore: &notifyBefore,
 	}
-	body, _ := protojson.Marshal(&payload)
 
-	{
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+	ctx1, cancel1 := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel1()
 
-		req1, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+"/api/v1/event", bytes.NewReader(body))
-		if err != nil {
-			t.Fatalf("failed to create first request: %v", err)
-		}
-		req1.Header.Set("Content-Type", "application/json")
-
-		resp1, err := http.DefaultClient.Do(req1)
-		if err != nil {
-			t.Fatalf("failed to send first request: %v", err)
-		}
-		defer resp1.Body.Close()
-
-		if resp1.StatusCode != http.StatusOK {
-			b, _ := io.ReadAll(resp1.Body)
-			t.Fatalf("unexpected first response: %d, body: %s", resp1.StatusCode, string(b))
-		}
+	resp1, body1 := doPostJSON(t, ctx1, baseURL+"/api/v1/event", payload)
+	if resp1.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected first response: %d, body: %s", resp1.StatusCode, string(body1))
 	}
 
-	{
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+	ctx2, cancel2 := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel2()
 
-		req2, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+"/api/v1/event", bytes.NewReader(body))
-		if err != nil {
-			t.Fatalf("failed to create second request: %v", err)
-		}
-		req2.Header.Set("Content-Type", "application/json")
-
-		resp2, err := http.DefaultClient.Do(req2)
-		if err != nil {
-			t.Fatalf("failed to send second request: %v", err)
-		}
-		defer resp2.Body.Close()
-
-		if resp2.StatusCode == http.StatusOK {
-			t.Fatalf("expected conflict error, got 200")
-		}
-
-		respBody, err := io.ReadAll(resp2.Body)
-		if err != nil {
-			t.Fatalf("failed to read response body: %v", err)
-		}
-
-		t.Logf("response body: %s", string(respBody))
-		assert.Contains(t, string(respBody), errors.ErrDateBusy.Error())
+	resp2, body2 := doPostJSON(t, ctx2, baseURL+"/api/v1/event", payload)
+	if resp2.StatusCode == http.StatusOK {
+		t.Fatalf("expected conflict error, got 200")
 	}
+
+	assert.Contains(t, string(body2), errors.ErrDateBusy.Error())
 }
 
 func TestCreateEvent_ValidationError(t *testing.T) {
@@ -149,7 +119,12 @@ func TestCreateEvent_ValidationError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to send request: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			t.Fatalf("fail to close body")
+		}
+	}(resp.Body)
 
 	if resp.StatusCode == http.StatusOK {
 		t.Fatalf("expected conflict error, got 200")
@@ -187,7 +162,12 @@ func TestCreateEvent_EventNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to send patch request: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			t.Fatalf("fail to close body")
+		}
+	}(resp.Body)
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("failed to read response body: %v", err)
@@ -217,7 +197,12 @@ func createEvent(t *testing.T, e Event) {
 	if err != nil {
 		t.Fatalf("failed to send request: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			t.Fatalf("fail to close body")
+		}
+	}(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(resp.Body)
 		t.Fatalf("unexpected status: %d, body: %s", resp.StatusCode, string(b))
@@ -246,7 +231,12 @@ func getEvents(t *testing.T, start, end time.Time) []Event {
 	if err != nil {
 		t.Fatalf("failed to send GET request: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			t.Fatalf("fail to close body")
+		}
+	}(resp.Body)
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("failed to read response body: %v", err)
@@ -310,4 +300,32 @@ func TestListEvents_Month(t *testing.T) {
 	if len(events) == 0 {
 		t.Errorf("expected at least 1 event for this month")
 	}
+}
+
+func doPostJSON(t *testing.T, ctx context.Context, url string, body *proto.CreateEventReq) (*http.Response, []byte) {
+	t.Helper()
+
+	jsonBody, err := protojson.Marshal(body)
+	if err != nil {
+		t.Fatalf("failed to marshal body: %v", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(jsonBody))
+	if err != nil {
+		t.Fatalf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("failed to read response body: %v", err)
+	}
+
+	return resp, respBody
 }
