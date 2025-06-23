@@ -52,6 +52,7 @@ func main() {
 		}
 	}(rmqClient)
 
+	logg.Info("Consumer started")
 	err = rmqClient.ConsumeNotifications(ctx, func(note rmq.Notification) {
 		logg.Info(fmt.Sprintf("[NOTIFY] EventID: %s, Title: %s, DateTime: %s, UserID: %s",
 			note.EventID, note.Title, note.DateTime.Format("2006-01-02 15:04:05"), note.UserID))

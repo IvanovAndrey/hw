@@ -2,17 +2,19 @@ logger:
   level: info
 
 rabbitmq:
-  uri: amqp://guest:guest@localhost:5672/
+  uri: amqp://guest:guest@rabbitmq:5672/
   queue: events
 
 system:
   database:
-    enable: false
-    host: localhost
+    enable: true
+    host: "postgres"
     port: 5432
-    db_name: calendar
-    user: postgres
-    password: ""
+    db_name: "postgres"
+    scheme: "calendar"
+    user: "postgres"
+    password: "postgres"
+    timeout: 5
     ssl_mode: disable
 
 scheduler:

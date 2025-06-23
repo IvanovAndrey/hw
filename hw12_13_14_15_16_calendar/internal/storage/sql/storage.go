@@ -257,7 +257,7 @@ func (s *DBStorage) EventGetList(ctx context.Context, _ *models.GetEventListReq)
 func (s *DBStorage) EventsToNotify(ctx context.Context) ([]models.Event, error) {
 	query := `
 		SELECT id, title, start_time, end_time, description, user_id, notify_before
-		FROM events
+		FROM calendar.events
 		WHERE notify_before IS NOT NULL
 		AND start_time - notify_before <= $1
 	`
@@ -284,7 +284,7 @@ func (s *DBStorage) EventsToNotify(ctx context.Context) ([]models.Event, error) 
 
 func (s *DBStorage) DeleteOldEvents(ctx context.Context, cutoff time.Time) error {
 	_, err := s.DB.Exec(ctx, `
-		DELETE FROM events
+		DELETE FROM calendar.events
 		WHERE end_time < $1
 	`, cutoff)
 	return err

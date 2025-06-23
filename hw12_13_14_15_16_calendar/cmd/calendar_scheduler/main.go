@@ -81,6 +81,7 @@ func runScheduler(
 		}
 	}()
 
+	logg.Info("Scheduler was started")
 	ticker := time.NewTicker(cfg.Scheduler.Interval)
 	defer ticker.Stop()
 

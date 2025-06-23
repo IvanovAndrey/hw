@@ -2,7 +2,7 @@ logger:
   level: info
 
 rabbitmq:
-  uri: amqp://guest:guest@localhost:5672/
+  uri: amqp://guest:guest@rabbitmq:5672/
   queue: events
 
 sender:
