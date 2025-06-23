@@ -45,13 +45,23 @@ func main() {
 	if err != nil {
 		logg.Fatal(fmt.Sprintf("failed to init consumer rmq: %v", err))
 	}
-	defer consumerRMQ.Close()
+	defer func(consumerRMQ *rmq.RMQClient) {
+		err := consumerRMQ.Close()
+		if err != nil {
+			logg.Fatal("can't close consumer")
+		}
+	}(consumerRMQ)
 
 	producerRMQ, err := rmq.NewRMQClient(cfg.RabbitMQ.URI, cfg.RabbitMQ.ForwardQueue)
 	if err != nil {
 		logg.Fatal(fmt.Sprintf("failed to init producer rmq: %v", err))
 	}
-	defer producerRMQ.Close()
+	defer func(producerRMQ *rmq.RMQClient) {
+		err := producerRMQ.Close()
+		if err != nil {
+			logg.Fatal("can't close producer")
+		}
+	}(producerRMQ)
 
 	logg.Info("Consumer started")
 	err = consumerRMQ.ConsumeNotifications(ctx, func(note rmq.Notification) {

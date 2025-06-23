@@ -55,15 +55,14 @@ func TestCreateEvent_Success(t *testing.T) {
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			t.Logf("warning: failed to close response body: %v", cerr)
+		}
+	}()
 	if err != nil {
 		t.Fatalf("failed to send request: %v", err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			t.Fatalf("fail to close body")
-		}
-	}(resp.Body)
 }
 
 func TestCreateEvent_Conflict(t *testing.T) {
@@ -80,6 +79,11 @@ func TestCreateEvent_Conflict(t *testing.T) {
 	defer cancel1()
 
 	resp1, body1 := doPostJSON(t, ctx1, baseURL+"/api/v1/event", payload)
+	defer func() {
+		if cerr := resp1.Body.Close(); cerr != nil {
+			t.Logf("warning: failed to close response body: %v", cerr)
+		}
+	}()
 	if resp1.StatusCode != http.StatusOK {
 		t.Fatalf("unexpected first response: %d, body: %s", resp1.StatusCode, string(body1))
 	}
@@ -88,6 +92,11 @@ func TestCreateEvent_Conflict(t *testing.T) {
 	defer cancel2()
 
 	resp2, body2 := doPostJSON(t, ctx2, baseURL+"/api/v1/event", payload)
+	defer func() {
+		if cerr := resp2.Body.Close(); cerr != nil {
+			t.Logf("warning: failed to close response body: %v", cerr)
+		}
+	}()
 	if resp2.StatusCode == http.StatusOK {
 		t.Fatalf("expected conflict error, got 200")
 	}
@@ -116,15 +125,15 @@ func TestCreateEvent_ValidationError(t *testing.T) {
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			t.Logf("warning: failed to close response body: %v", cerr)
+		}
+	}()
+
 	if err != nil {
 		t.Fatalf("failed to send request: %v", err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			t.Fatalf("fail to close body")
-		}
-	}(resp.Body)
 
 	if resp.StatusCode == http.StatusOK {
 		t.Fatalf("expected conflict error, got 200")
@@ -159,15 +168,14 @@ func TestCreateEvent_EventNotFound(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			t.Logf("warning: failed to close response body: %v", cerr)
+		}
+	}()
 	if err != nil {
 		t.Fatalf("failed to send patch request: %v", err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			t.Fatalf("fail to close body")
-		}
-	}(resp.Body)
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("failed to read response body: %v", err)
@@ -197,12 +205,11 @@ func createEvent(t *testing.T, e Event) {
 	if err != nil {
 		t.Fatalf("failed to send request: %v", err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			t.Fatalf("fail to close body")
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			t.Logf("warning: failed to close response body: %v", cerr)
 		}
-	}(resp.Body)
+	}()
 	if resp.StatusCode != http.StatusOK {
 		b, _ := io.ReadAll(resp.Body)
 		t.Fatalf("unexpected status: %d, body: %s", resp.StatusCode, string(b))
@@ -231,12 +238,11 @@ func getEvents(t *testing.T, start, end time.Time) []Event {
 	if err != nil {
 		t.Fatalf("failed to send GET request: %v", err)
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			t.Fatalf("fail to close body")
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			t.Logf("warning: failed to close response body: %v", cerr)
 		}
-	}(resp.Body)
+	}()
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("failed to read response body: %v", err)
@@ -320,7 +326,12 @@ func doPostJSON(t *testing.T, ctx context.Context, url string, body *proto.Creat
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			t.Fatalf("can't close body")
+		}
+	}(resp.Body)
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

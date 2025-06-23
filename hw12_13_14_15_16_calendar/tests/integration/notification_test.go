@@ -35,6 +35,11 @@ func TestSender_ForwardsNotificationToRabbit(t *testing.T) {
 	defer cancel()
 
 	resp, respBody := doPostJSON(t, ctx, baseURL+"/api/v1/event", createEventReq)
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			t.Logf("warning: failed to close response body: %v", cerr)
+		}
+	}()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("unexpected response: %d — %s", resp.StatusCode, string(respBody))
 	}
