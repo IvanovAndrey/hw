@@ -33,7 +33,7 @@ install-lint-deps:
 	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin  v2.1.6
 
 lint: install-lint-deps
-	golangci-lint run --out-format=colored-line-number
+	golangci-lint run
 
 DB_HOST     ?= postgres
 DB_PORT     ?= 5432
@@ -95,6 +95,7 @@ down:
 	$(DOCKER_COMPOSE) down -v
 
 integration-tests:
+	$(DOCKER_COMPOSE) down -v
 	$(DOCKER_COMPOSE) up --abort-on-container-exit integration-tests
 	$(DOCKER_COMPOSE) down -v
 
