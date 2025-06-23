@@ -1,5 +1,5 @@
 logger:
-  level: info
+  level: debug
 
 rabbitmq:
   uri: amqp://guest:guest@rabbitmq:5672/

@@ -127,14 +127,21 @@ func (s *LocalStorage) EventGet(_ context.Context, req *models.EventIDReq) (*mod
 	return &cpy, nil
 }
 
-func (s *LocalStorage) EventGetList(_ context.Context, _ *models.GetEventListReq) (*models.GetEventListResp, error) {
-	s.logger.Debug("EventGetList called=")
+func (s *LocalStorage) EventGetList(_ context.Context, req *models.GetEventListReq) (*models.GetEventListResp, error) {
+	s.logger.Debug("EventGetList called")
 
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	result := make([]models.Event, 0, len(s.events))
 	for _, ev := range s.events {
+		if req.Start != nil && ev.EndTime.Before(*req.Start) {
+			continue
+		}
+		if req.End != nil && ev.Date.After(*req.End) {
+			continue
+		}
+
 		result = append(result, *ev)
 	}
 
@@ -146,21 +153,18 @@ func (s *LocalStorage) EventsToNotify(_ context.Context) ([]models.Event, error)
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	now := time.Now()
-	var result []models.Event
+	result := make([]models.Event, 0, len(s.events))
 	for _, event := range s.events {
-		eventTime, err := time.Parse(time.RFC3339, event.Date)
-		if err != nil {
-			continue
-		}
 		var notifyBefore time.Duration
+		var err error
 		if event.NotifyBefore != nil {
 			notifyBefore, err = time.ParseDuration(*event.NotifyBefore)
 			if err != nil {
 				notifyBefore = 0
 			}
 		}
-		notifyAt := eventTime.Add(-notifyBefore)
-		if now.After(notifyAt) && now.Before(eventTime) {
+		notifyAt := event.Date.Add(-notifyBefore)
+		if now.After(notifyAt) && now.Before(event.Date) {
 			result = append(result, *event)
 		}
 	}
@@ -171,24 +175,13 @@ func (s *LocalStorage) DeleteOldEvents(_ context.Context, cutoff time.Time) erro
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for id, event := range s.events {
-		endTime, err := time.Parse(time.RFC3339, event.EndTime)
-		if err != nil {
-			continue
-		}
-		if endTime.Before(cutoff) {
+		if event.EndTime.Before(cutoff) {
 			delete(s.events, id)
 		}
 	}
 	return nil
 }
 
-func rangesOverlap(start1Str, end1Str, start2Str, end2Str string) bool {
-	start1, err1 := time.Parse(time.RFC3339, start1Str)
-	end1, err2 := time.Parse(time.RFC3339, end1Str)
-	start2, err3 := time.Parse(time.RFC3339, start2Str)
-	end2, err4 := time.Parse(time.RFC3339, end2Str)
-	if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
-		return false
-	}
+func rangesOverlap(start1, end1, start2, end2 time.Time) bool {
 	return start1.Before(end2) && start2.Before(end1)
 }

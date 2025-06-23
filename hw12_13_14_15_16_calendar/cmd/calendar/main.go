@@ -23,7 +23,7 @@ var configFile string
 
 func init() {
 	flag.StringVar(&configFile, "config",
-		"./../../configs/calendar_config.yaml",
+		"./configs/calendar_config.yaml",
 		"Path to configuration file")
 }
 

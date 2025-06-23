@@ -1,5 +1,5 @@
 logger:
-  level: debug
+  level: trace
 
 system:
   http:
@@ -21,3 +21,27 @@ system:
     password: "postgres"
     timeout: 5
     ssl_mode: disable
+
+#logger:
+#   level: debug
+#
+#system:
+#  http:
+#    address: "0.0.0.0:8082"
+#    write_timeout: 15
+#    read_timeout: 15
+#
+#  grpc:
+#    port: 8081
+#    connection_timeout: 10
+#
+#  database:
+#    enable: true
+#    host: 0.0.0.0
+#    port: 7432
+#    db_name: "postgres"
+#    scheme: "calendar"
+#    user: "postgres"
+#    password: "postgres"
+#    timeout: 5
+#    ssl_mode: disable
