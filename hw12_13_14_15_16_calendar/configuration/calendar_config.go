@@ -13,24 +13,24 @@ type Config struct {
 			WriteTimeout int    `mapstructure:"write_timeout" env:"HTTP_WRITE_TIMEOUT"`
 			ReadTimeout  int    `mapstructure:"read_timeout" env:"HTTP_READ_TIMEOUT"`
 		} `mapstructure:"http"`
-
-		Grpc struct {
+		Database DatabaseConf `mapstructure:"database"`
+		Grpc     struct {
 			Port              uint16 `mapstructure:"port" env:"GRPC_PORT"`
 			ConnectionTimeout int    `mapstructure:"connection_timeout" env:"GRPC_CONNECTION_TIMEOUT"`
 		} `mapstructure:"grpc"`
-
-		Database struct {
-			Enable   bool   `mapstructure:"enable" env:"DB_ENABLE"`
-			Host     string `mapstructure:"host" env:"DB_HOST"`
-			Port     int    `mapstructure:"port" env:"DB_PORT"`
-			DBName   string `mapstructure:"db_name" env:"DB_NAME"`
-			Scheme   string `mapstructure:"scheme" env:"DB_SCHEME"`
-			User     string `mapstructure:"user" env:"DB_USER"`
-			Password string `mapstructure:"password" env:"DB_PASSWORD"`
-			Timeout  int    `mapstructure:"timeout" env:"DB_TIMEOUT"`
-			SSLMode  string `mapstructure:"ssl_mode" env:"DB_SSL_MODE"`
-		} `mapstructure:"database"`
 	} `mapstructure:"system"`
+}
+
+type DatabaseConf struct {
+	Enable   bool   `mapstructure:"enable" env:"DB_ENABLE"`
+	Host     string `mapstructure:"host" env:"DB_HOST"`
+	Port     int    `mapstructure:"port" env:"DB_PORT"`
+	DBName   string `mapstructure:"db_name" env:"DB_NAME"`
+	Scheme   string `mapstructure:"scheme" env:"DB_SCHEME"`
+	User     string `mapstructure:"user" env:"DB_USER"`
+	Password string `mapstructure:"password" env:"DB_PASSWORD"`
+	Timeout  int    `mapstructure:"timeout" env:"DB_TIMEOUT"`
+	SSLMode  string `mapstructure:"ssl_mode" env:"DB_SSL_MODE"`
 }
 
 type LoggerConf struct {

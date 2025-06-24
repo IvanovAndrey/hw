@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/cmd"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/configuration"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/consts"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/app"
@@ -21,14 +22,16 @@ import (
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "./../../configs/config.yaml", "Path to configuration file")
+	flag.StringVar(&configFile, "config",
+		"./../../configs/calendar_config.yaml",
+		"Path to configuration file")
 }
 
 func main() {
 	flag.Parse()
 
 	if flag.Arg(0) == "version" {
-		printVersion()
+		cmd.PrintVersion()
 		return
 	}
 
@@ -37,7 +40,7 @@ func main() {
 		panic(err)
 	}
 
-	logg := logger.NewLogger(consts.AppName, release, cfg.Logger.Level)
+	logg := logger.NewLogger(consts.AppName, cmd.Release, cfg.Logger.Level)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -45,7 +48,7 @@ func main() {
 
 	var storage storageInterface.Storage
 	if cfg.System.Database.Enable {
-		storage, err = sqlstorage.NewStorage(ctx, cfg, logg.WithModule("sqlStorage"))
+		storage, err = sqlstorage.NewStorage(ctx, &cfg.System.Database, logg.WithModule("sqlStorage"))
 		if err != nil {
 			logg.Fatal("failed to connect to db")
 		}

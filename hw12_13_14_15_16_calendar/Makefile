@@ -1,14 +1,18 @@
-BIN := "./bin/calendar"
+BIN_CALENDAR := ./bin/calendar
+BIN_SCHEDULER := ./bin/calendar_scheduler
+BIN_SENDER := ./bin/calendar_sender
 DOCKER_IMG="calendar:develop"
 
 GIT_HASH := $(shell git log --format="%h" -n 1)
 LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
 
 build:
-	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
+	go build -v -o $(BIN_CALENDAR)  -ldflags "$(LDFLAGS)" ./cmd/calendar
+	go build -v -o $(BIN_SCHEDULER) -ldflags "$(LDFLAGS)" ./cmd/calendar_scheduler
+	go build -v -o $(BIN_SENDER)    -ldflags "$(LDFLAGS)" ./cmd/calendar_sender
 
 run: build
-	$(BIN) -config ./configs/config.toml
+	$(BIN_CALENDAR) -config ./configs/config.toml
 
 build-img:
 	docker build \
@@ -20,7 +24,7 @@ run-img: build-img
 	docker run $(DOCKER_IMG)
 
 version: build
-	$(BIN) version
+	$(BIN_CALENDAR) version
 
 test:
 	go test -race ./internal/...
@@ -80,7 +84,4 @@ protogen:
 			--grpc-gateway_opt paths=source_relative \
 			--openapiv2_out=logtostderr=true,allow_delete_body=true,json_names_for_fields=false,allow_merge=true,merge_file_name=prodg_api_server:${PROTO_PATH}
 
-
 .PHONY: build run build-img run-img version test lint migrate goose-install
-
-

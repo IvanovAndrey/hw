@@ -1,0 +1,9 @@
+logger:
+  level: info
+
+rabbitmq:
+  uri: amqp://guest:guest@localhost:5672/
+  queue: events
+
+sender:
+  poll_interval: 2s
