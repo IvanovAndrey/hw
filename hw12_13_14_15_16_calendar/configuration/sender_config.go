@@ -13,8 +13,9 @@ type SenderConfig struct {
 	} `mapstructure:"logger"`
 
 	RabbitMQ struct {
-		URI   string `mapstructure:"uri"`
-		Queue string `mapstructure:"queue"`
+		URI          string `mapstructure:"uri"`
+		Queue        string `mapstructure:"queue"`
+		ForwardQueue string `mapstructure:"forward_queue"`
 	} `mapstructure:"rabbitmq"`
 }
 

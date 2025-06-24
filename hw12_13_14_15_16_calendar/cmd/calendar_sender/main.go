@@ -41,20 +41,36 @@ func main() {
 		cancel()
 	}()
 
-	rmqClient, err := rmq.NewRMQClient(cfg.RabbitMQ.URI, cfg.RabbitMQ.Queue)
+	consumerRMQ, err := rmq.NewRMQClient(cfg.RabbitMQ.URI, cfg.RabbitMQ.Queue)
 	if err != nil {
-		logg.Fatal(fmt.Sprintf("failed to init rmq: %v", err))
+		logg.Fatal(fmt.Sprintf("failed to init consumer rmq: %v", err))
 	}
-	defer func(rmqClient *rmq.RMQClient) {
-		err := rmqClient.Close()
+	defer func(consumerRMQ *rmq.RMQClient) {
+		err := consumerRMQ.Close()
 		if err != nil {
-			logg.Fatal(fmt.Sprintf("failed to close rmq client: %v", err))
+			logg.Fatal("can't close consumer")
 		}
-	}(rmqClient)
+	}(consumerRMQ)
 
-	err = rmqClient.ConsumeNotifications(ctx, func(note rmq.Notification) {
+	producerRMQ, err := rmq.NewRMQClient(cfg.RabbitMQ.URI, cfg.RabbitMQ.ForwardQueue)
+	if err != nil {
+		logg.Fatal(fmt.Sprintf("failed to init producer rmq: %v", err))
+	}
+	defer func(producerRMQ *rmq.RMQClient) {
+		err := producerRMQ.Close()
+		if err != nil {
+			logg.Fatal("can't close producer")
+		}
+	}(producerRMQ)
+
+	logg.Info("Consumer started")
+	err = consumerRMQ.ConsumeNotifications(ctx, func(note rmq.Notification) {
 		logg.Info(fmt.Sprintf("[NOTIFY] EventID: %s, Title: %s, DateTime: %s, UserID: %s",
 			note.EventID, note.Title, note.DateTime.Format("2006-01-02 15:04:05"), note.UserID))
+
+		if err := producerRMQ.PublishNotification(ctx, note); err != nil {
+			logg.Error(fmt.Sprintf("failed to forward notification: %v", err))
+		}
 	})
 	if err != nil {
 		logg.Fatal(fmt.Sprintf("failed to consume notifications: %v", err))

@@ -82,6 +82,7 @@ func runScheduler(
 	}()
 
 	ticker := time.NewTicker(cfg.Scheduler.Interval)
+	logg.Info(fmt.Sprintf("Scheduler was started with interval %v", cfg.Scheduler.Interval))
 	defer ticker.Stop()
 
 	for {
@@ -95,26 +96,22 @@ func runScheduler(
 				logg.Error(fmt.Sprintf("query notify events: %v", err))
 				continue
 			}
+			if len(events) == 0 {
+				logg.Debug("no events to notify")
+			} else {
+				for _, ev := range events {
+					note := rmq.Notification{
+						EventID:  ev.ID,
+						Title:    ev.Title,
+						DateTime: ev.Date,
+						UserID:   ev.User,
+					}
 
-			for _, ev := range events {
-				eventTime, err := time.Parse(time.RFC3339, ev.Date)
-				if err != nil {
-					logg.Error(fmt.Sprintf("invalid event date: %v", err))
-					continue
-				}
-
-				note := rmq.Notification{
-					EventID:  ev.ID,
-					Title:    ev.Title,
-					DateTime: eventTime,
-					UserID:   ev.User,
-				}
-
-				if err := rmqClient.PublishNotification(ctx, note); err != nil {
-					logg.Error(fmt.Sprintf("publish notification: %v", err))
+					if err := rmqClient.PublishNotification(ctx, note); err != nil {
+						logg.Error(fmt.Sprintf("publish notification: %v", err))
+					}
 				}
 			}
-
 			if err := storage.DeleteOldEvents(ctx, time.Now().AddDate(-1, 0, 0)); err != nil {
 				logg.Error(fmt.Sprintf("cleanup old events: %v", err))
 			}

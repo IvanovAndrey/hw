@@ -246,6 +246,7 @@ func local_request_Calendar_GetEventList_0(ctx context.Context, marshaler runtim
 // UnaryRPC     :call CalendarServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterCalendarHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterCalendarHandlerServer(ctx context.Context, mux *runtime.ServeMux, server CalendarServer) error {
 
 	mux.Handle("GET", pattern_Calendar_GetLiveZ_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -404,21 +405,21 @@ func RegisterCalendarHandlerServer(ctx context.Context, mux *runtime.ServeMux, s
 // RegisterCalendarHandlerFromEndpoint is same as RegisterCalendarHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
 func RegisterCalendarHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
-	conn, err := grpc.DialContext(ctx, endpoint, opts...)
+	conn, err := grpc.NewClient(endpoint, opts...)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		if err != nil {
 			if cerr := conn.Close(); cerr != nil {
-				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+				grpclog.Errorf("Failed to close conn to %s: %v", endpoint, cerr)
 			}
 			return
 		}
 		go func() {
 			<-ctx.Done()
 			if cerr := conn.Close(); cerr != nil {
-				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
+				grpclog.Errorf("Failed to close conn to %s: %v", endpoint, cerr)
 			}
 		}()
 	}()
@@ -436,7 +437,7 @@ func RegisterCalendarHandler(ctx context.Context, mux *runtime.ServeMux, conn *g
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "CalendarClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "CalendarClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "CalendarClient" to call the correct interceptors.
+// "CalendarClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterCalendarHandlerClient(ctx context.Context, mux *runtime.ServeMux, client CalendarClient) error {
 
 	mux.Handle("GET", pattern_Calendar_GetLiveZ_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

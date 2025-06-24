@@ -4,13 +4,16 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/proto"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type mockStorage struct {
@@ -70,9 +73,9 @@ func TestCreateEvent(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		a, st := newTestApp()
 		req := &proto.CreateEventReq{
-			Date:    "1",
-			User:    "1",
-			EndTime: "1",
+			Date:    timestamppb.New(time.Now()),
+			User:    uuid.NewString(),
+			EndTime: timestamppb.New(time.Now().Add(time.Hour)),
 			Title:   "test",
 		}
 		expected := &proto.Event{Id: "1"}
@@ -86,9 +89,9 @@ func TestCreateEvent(t *testing.T) {
 	t.Run("storage error", func(t *testing.T) {
 		a, st := newTestApp()
 		req := &proto.CreateEventReq{
-			Date:    "1",
-			User:    "1",
-			EndTime: "1",
+			Date:    timestamppb.New(time.Now()),
+			User:    uuid.NewString(),
+			EndTime: timestamppb.New(time.Now().Add(time.Hour)),
 			Title:   "test",
 		}
 		st.On("CreateEvent", mock.Anything, req).Return(&proto.Event{}, errors.New("db error"))

@@ -11,6 +11,7 @@ import (
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/logger"
 	"github.com/IvanovAndrey/hw/hw12_13_14_15_calendar/internal/storage/models"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -70,7 +71,8 @@ func (s *DBStorage) EventCreate(ctx context.Context, req *models.CreateEventReq)
 		return nil, fmt.Errorf("check overlap: %w", err)
 	}
 	if exists {
-		s.logger.Error("conflict: user=" + req.User + " date=" + req.Date + " end=" + req.EndTime)
+		s.logger.Error("conflict: user=" + req.User + " date=" +
+			req.Date.Format(time.RFC822Z) + " end=" + req.EndTime.Format(time.RFC822Z))
 		return nil, fmt.Errorf("event conflict: %w", calendarErrors.ErrDateBusy)
 	}
 
@@ -203,8 +205,9 @@ func (s *DBStorage) EventGet(ctx context.Context, req *models.EventIDReq) (*mode
 	s.logger.Debug("SQL: " + sql)
 
 	var e models.Event
+	var notify pgtype.Interval
 	if err := s.DB.QueryRow(ctx, sql, req.ID).Scan(
-		&e.ID, &e.Title, &e.Date, &e.EndTime, &e.Description, &e.User, &e.NotifyBefore,
+		&e.ID, &e.Title, &e.Date, &e.EndTime, &e.Description, &e.User, &notify,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			s.logger.Warn("event not found id=" + req.ID)
@@ -213,19 +216,32 @@ func (s *DBStorage) EventGet(ctx context.Context, req *models.EventIDReq) (*mode
 		s.logger.Error("get failed: " + err.Error())
 		return nil, fmt.Errorf("get event: %w", err)
 	}
-
+	e.NotifyBefore = IntervalToDurationString(notify)
 	s.logger.Debug("event fetched id=" + req.ID)
 	return &e, nil
 }
 
-func (s *DBStorage) EventGetList(ctx context.Context, _ *models.GetEventListReq) (*models.GetEventListResp, error) {
-	sql := `
-		SELECT id, title, start_time, end_time, description, user_id, notify_before
-		FROM calendar.events
-		ORDER BY start_time`
-	s.logger.Debug("SQL: " + sql)
+func (s *DBStorage) EventGetList(ctx context.Context, req *models.GetEventListReq) (*models.GetEventListResp, error) {
+	query := `SELECT id, title, start_time, end_time, description, user_id, notify_before
+              FROM calendar.events WHERE 1=1`
+	args := []interface{}{}
+	argID := 1
 
-	rows, err := s.DB.Query(ctx, sql)
+	if req.Start != nil {
+		query += fmt.Sprintf(" AND end_time >= $%d", argID)
+		args = append(args, *req.Start)
+		argID++
+	}
+
+	if req.End != nil {
+		query += fmt.Sprintf(" AND start_time <= $%d", argID)
+		args = append(args, *req.End)
+	}
+
+	query += " ORDER BY start_time"
+	s.logger.Debug("SQL: " + query)
+
+	rows, err := s.DB.Query(ctx, query, args...)
 	if err != nil {
 		s.logger.Error("list query failed: " + err.Error())
 		return nil, fmt.Errorf("get event list: %w", err)
@@ -235,34 +251,29 @@ func (s *DBStorage) EventGetList(ctx context.Context, _ *models.GetEventListReq)
 	var events []models.Event
 	for rows.Next() {
 		var e models.Event
-		if err := rows.Scan(
-			&e.ID,
-			&e.Title,
-			&e.Date,
-			&e.EndTime,
-			&e.Description,
-			&e.User,
-			&e.NotifyBefore,
-		); err != nil {
+		var notify pgtype.Interval
+		err := rows.Scan(&e.ID, &e.Title, &e.Date, &e.EndTime, &e.Description, &e.User, &notify)
+		if err != nil {
 			s.logger.Error("scan failed: " + err.Error())
 			return nil, fmt.Errorf("scan event: %w", err)
 		}
+		e.NotifyBefore = IntervalToDurationString(notify)
 		events = append(events, e)
 	}
 
-	s.logger.Debug(fmt.Sprintf("event list fetched: count=%d", len(events)))
 	return &models.GetEventListResp{Data: events}, nil
 }
 
 func (s *DBStorage) EventsToNotify(ctx context.Context) ([]models.Event, error) {
 	query := `
 		SELECT id, title, start_time, end_time, description, user_id, notify_before
-		FROM events
+		FROM calendar.events
 		WHERE notify_before IS NOT NULL
 		AND start_time - notify_before <= $1
 	`
 
 	now := time.Now()
+	s.logger.Debug(fmt.Sprintf("SQL: %v%v", query, now))
 	rows, err := s.DB.Query(ctx, query, now)
 	if err != nil {
 		return nil, err
@@ -272,20 +283,32 @@ func (s *DBStorage) EventsToNotify(ctx context.Context) ([]models.Event, error) 
 	var events []models.Event
 	for rows.Next() {
 		var ev models.Event
-		err := rows.Scan(&ev.ID, &ev.Title, &ev.Date, &ev.EndTime, &ev.Description, &ev.User, &ev.NotifyBefore)
+		var notify pgtype.Interval
+		err := rows.Scan(&ev.ID, &ev.Title, &ev.Date, &ev.EndTime, &ev.Description, &ev.User, &notify)
 		if err != nil {
 			return nil, err
 		}
+		ev.NotifyBefore = IntervalToDurationString(notify)
 		events = append(events, ev)
 	}
-
+	s.logger.Debug(fmt.Sprintf("events: %v", events))
 	return events, rows.Err()
 }
 
 func (s *DBStorage) DeleteOldEvents(ctx context.Context, cutoff time.Time) error {
 	_, err := s.DB.Exec(ctx, `
-		DELETE FROM events
+		DELETE FROM calendar.events
 		WHERE end_time < $1
 	`, cutoff)
 	return err
+}
+
+func IntervalToDurationString(iv pgtype.Interval) *string {
+	d := time.Duration(iv.Microseconds) * time.Microsecond
+	if iv.Months != 0 || iv.Days != 0 {
+		res := fmt.Sprintf("%dmo %dd %s", iv.Months, iv.Days, d)
+		return &res
+	}
+	x := d.String()
+	return &x
 }

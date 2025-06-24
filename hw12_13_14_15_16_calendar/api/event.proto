@@ -4,13 +4,14 @@ package calendar_proto;
 option go_package = "github.com/IvanovAndrey/hw/hw12_13_14_15_16_calendar/proto";
 
 import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
 import "validate/validate.proto";
 
 message Event {
   string id = 1 [json_name = "id"];
   string title = 2 [json_name = "title"];
-  string date = 3 [json_name = "date"];
-  string end_time = 4 [json_name = "end_time"];
+  google.protobuf.Timestamp date = 3 [json_name = "date"];
+  google.protobuf.Timestamp end_time = 4 [json_name = "end_time"];
   optional string description = 5 [json_name = "description"];
   string user = 6 [json_name = "user"];
   optional string notify_before = 7 [json_name = "notify_before"];
@@ -18,8 +19,8 @@ message Event {
 
 message CreateEventReq {
   string title = 1 [json_name = "title", (validate.rules).string.min_len = 1, (google.api.field_behavior) = REQUIRED];
-  string date = 2 [json_name = "date", (validate.rules).string.min_len = 1, (google.api.field_behavior) = REQUIRED];
-  string end_time = 3 [json_name = "end_time", (validate.rules).string.min_len = 1, (google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp date = 2 [json_name = "date", (validate.rules).timestamp.required = true, (google.api.field_behavior) = REQUIRED];
+  google.protobuf.Timestamp end_time = 3 [json_name = "end_time", (validate.rules).timestamp.required = true, (google.api.field_behavior) = REQUIRED];
   optional string description = 4 [json_name = "description"];
   string user = 5 [json_name = "user", (validate.rules).string.min_len = 1, (google.api.field_behavior) = REQUIRED];
   optional string notify_before = 6 [json_name = "notify_before"];
@@ -28,8 +29,8 @@ message CreateEventReq {
 message EditEventReq {
   string id = 1 [json_name = "id", (validate.rules).string.min_len = 1, (google.api.field_behavior) = REQUIRED];
   optional string title = 2 [json_name = "title"];
-  optional string date = 3 [json_name = "date"];
-  optional string end_time = 4 [json_name = "end_time"];
+  optional google.protobuf.Timestamp date = 3 [json_name = "date"];
+  optional google.protobuf.Timestamp end_time = 4 [json_name = "end_time"];
   optional string description = 5 [json_name = "description"];
   optional string user = 6 [json_name = "user"];
   optional string notify_before = 7 [json_name = "notify_before"];
@@ -40,7 +41,8 @@ message EventByIdReq {
 }
 
 message GetEventListReq {
-  optional string filter = 1 [json_name = "filter"];
+  optional string start = 1 [json_name = "start"];
+  optional string end = 2 [json_name = "end"];
 }
 
 message GetEventListRes {
