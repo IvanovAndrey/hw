@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: calendar-migrator
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      name: calendar-migrator
+    spec:
+      containers:
+        - name: migrator
+          image: calendar:develop
+          command:
+            - goose
+            - -dir
+            - migrations
+            - postgres
+            - host=postgres port=5432 user=postgres password=postgres dbname=calendar sslmode=disable
+            - up
+      restartPolicy: Never

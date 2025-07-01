@@ -1,0 +1,29 @@
+{{- range $name, $svc := .Values.services }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $svc.name }}
+spec:
+  replicas: {{ $.Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ $svc.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $svc.name }}
+    spec:
+      containers:
+        - name: {{ $svc.name }}
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          args: {{ toJson $svc.args }}
+          volumeMounts:
+            - name: config-volume
+              mountPath: {{ $.Values.configMountPath }}
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ $svc.name }}-config
+---
+{{- end }}

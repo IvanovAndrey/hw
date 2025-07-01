@@ -1,0 +1,76 @@
+image:
+  repository: calendar
+  tag: develop
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+configMountPath: /configs
+
+services:
+  api:
+    name: calendar
+    containerPort: 8080
+    config: calendar_config.yaml
+    args: ["./bin/calendar", "--config=/configs/calendar_config.yaml"]
+    configContent: |
+      logger:
+        level: debug
+      rabbitmq:
+        uri: amqp://guest:guest@rabbitmq:5672/
+        queue: events
+      system:
+        database:
+          enable: true
+          host: postgres
+          port: 5432
+          db_name: calendar
+          user: postgres
+          password: postgres
+          ssl_mode: disable
+
+  scheduler:
+    name: calendar-scheduler
+    config: scheduler_config.yaml
+    args: ["./bin/calendar_scheduler", "--config=/configs/scheduler_config.yaml"]
+    configContent: |
+      logger:
+        level: info
+      rabbitmq:
+        uri: amqp://guest:guest@rabbitmq:5672/
+        queue: events
+      scheduler:
+        interval: 1m
+      system:
+        database:
+          enable: true
+          host: postgres
+          port: 5432
+          db_name: calendar
+          user: postgres
+          password: postgres
+          ssl_mode: disable
+
+  sender:
+    name: calendar-sender
+    config: sender_config.yaml
+    args: ["./bin/calendar_sender", "--config=/configs/sender_config.yaml"]
+    configContent: |
+      logger:
+        level: info
+      rabbitmq:
+        uri: amqp://guest:guest@rabbitmq:5672/
+        queue: events
+        forwardQueue: notifications
+      system:
+        database:
+          enable: false
+      sender:
+        poll_interval: 2s
+
+ingress:
+  enabled: true
+  host: calendar.local
+  path: /
+  pathType: Prefix
+  servicePort: 8080
