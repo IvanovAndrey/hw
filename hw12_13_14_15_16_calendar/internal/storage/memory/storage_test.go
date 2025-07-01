@@ -21,8 +21,8 @@ func testLogger() logger.Logger {
 func newCreateReq(user, title string, start, end time.Time) *models.CreateEventReq {
 	return &models.CreateEventReq{
 		Title:       title,
-		Date:        start.Format(time.RFC3339),
-		EndTime:     end.Format(time.RFC3339),
+		Date:        start,
+		EndTime:     end,
 		Description: nil,
 		User:        user,
 	}

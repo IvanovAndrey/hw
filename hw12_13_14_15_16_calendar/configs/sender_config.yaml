@@ -1,9 +1,10 @@
 logger:
-  level: info
+  level: trace
 
 rabbitmq:
-  uri: amqp://guest:guest@localhost:5672/
+  uri: amqp://guest:guest@rabbitmq:5672/
   queue: events
+  forward_queue: notifications
 
 sender:
   poll_interval: 2s

@@ -60,9 +60,63 @@ func (m *Event) validate(all bool) error {
 
 	// no validation rules for Title
 
-	// no validation rules for Date
+	if all {
+		switch v := interface{}(m.GetDate()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, EventValidationError{
+					field:  "Date",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, EventValidationError{
+					field:  "Date",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetDate()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return EventValidationError{
+				field:  "Date",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
 
-	// no validation rules for EndTime
+	if all {
+		switch v := interface{}(m.GetEndTime()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, EventValidationError{
+					field:  "EndTime",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, EventValidationError{
+					field:  "EndTime",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetEndTime()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return EventValidationError{
+				field:  "EndTime",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
 
 	// no validation rules for User
 
@@ -184,10 +238,10 @@ func (m *CreateEventReq) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if utf8.RuneCountInString(m.GetDate()) < 1 {
+	if m.GetDate() == nil {
 		err := CreateEventReqValidationError{
 			field:  "Date",
-			reason: "value length must be at least 1 runes",
+			reason: "value is required",
 		}
 		if !all {
 			return err
@@ -195,10 +249,10 @@ func (m *CreateEventReq) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if utf8.RuneCountInString(m.GetEndTime()) < 1 {
+	if m.GetEndTime() == nil {
 		err := CreateEventReqValidationError{
 			field:  "EndTime",
-			reason: "value length must be at least 1 runes",
+			reason: "value is required",
 		}
 		if !all {
 			return err
@@ -341,11 +395,69 @@ func (m *EditEventReq) validate(all bool) error {
 	}
 
 	if m.Date != nil {
-		// no validation rules for Date
+
+		if all {
+			switch v := interface{}(m.GetDate()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EditEventReqValidationError{
+						field:  "Date",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EditEventReqValidationError{
+						field:  "Date",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetDate()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EditEventReqValidationError{
+					field:  "Date",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	}
 
 	if m.EndTime != nil {
-		// no validation rules for EndTime
+
+		if all {
+			switch v := interface{}(m.GetEndTime()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EditEventReqValidationError{
+						field:  "EndTime",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EditEventReqValidationError{
+						field:  "EndTime",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetEndTime()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EditEventReqValidationError{
+					field:  "EndTime",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	}
 
 	if m.Description != nil {
@@ -569,8 +681,12 @@ func (m *GetEventListReq) validate(all bool) error {
 
 	var errors []error
 
-	if m.Filter != nil {
-		// no validation rules for Filter
+	if m.Start != nil {
+		// no validation rules for Start
+	}
+
+	if m.End != nil {
+		// no validation rules for End
 	}
 
 	if len(errors) > 0 {

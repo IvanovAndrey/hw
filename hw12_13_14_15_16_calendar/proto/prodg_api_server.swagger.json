@@ -156,7 +156,13 @@
         },
         "parameters": [
           {
-            "name": "filter",
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "end",
             "in": "query",
             "required": false,
             "type": "string"
@@ -199,10 +205,12 @@
           "type": "string"
         },
         "date": {
-          "type": "string"
+          "type": "string",
+          "format": "date-time"
         },
         "end_time": {
-          "type": "string"
+          "type": "string",
+          "format": "date-time"
         },
         "description": {
           "type": "string"
@@ -231,10 +239,12 @@
           "type": "string"
         },
         "date": {
-          "type": "string"
+          "type": "string",
+          "format": "date-time"
         },
         "end_time": {
-          "type": "string"
+          "type": "string",
+          "format": "date-time"
         },
         "description": {
           "type": "string"
@@ -260,10 +270,12 @@
           "type": "string"
         },
         "date": {
-          "type": "string"
+          "type": "string",
+          "format": "date-time"
         },
         "end_time": {
-          "type": "string"
+          "type": "string",
+          "format": "date-time"
         },
         "description": {
           "type": "string"

@@ -1,10 +1,12 @@
 package models
 
+import "time"
+
 type Event struct {
 	ID           string
 	Title        string
-	Date         string
-	EndTime      string
+	Date         time.Time
+	EndTime      time.Time
 	Description  *string
 	User         string
 	NotifyBefore *string
@@ -12,8 +14,8 @@ type Event struct {
 
 type CreateEventReq struct {
 	Title        string
-	Date         string
-	EndTime      string
+	Date         time.Time
+	EndTime      time.Time
 	Description  *string
 	User         string
 	NotifyBefore *string
@@ -22,8 +24,8 @@ type CreateEventReq struct {
 type EditEventReq struct {
 	ID           string
 	Title        *string
-	Date         *string
-	EndTime      *string
+	Date         *time.Time
+	EndTime      *time.Time
 	Description  *string
 	User         *string
 	NotifyBefore *string
@@ -34,7 +36,8 @@ type EventIDReq struct {
 }
 
 type GetEventListReq struct {
-	Filter string // TODO refactor
+	Start *time.Time
+	End   *time.Time
 }
 
 type GetEventListResp struct {

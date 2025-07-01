@@ -7,12 +7,12 @@ GIT_HASH := $(shell git log --format="%h" -n 1)
 LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
 
 build:
-	go build -v -o $(BIN_CALENDAR)  -ldflags "$(LDFLAGS)" ./cmd/calendar
-	go build -v -o $(BIN_SCHEDULER) -ldflags "$(LDFLAGS)" ./cmd/calendar_scheduler
-	go build -v -o $(BIN_SENDER)    -ldflags "$(LDFLAGS)" ./cmd/calendar_sender
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o $(BIN_CALENDAR)  -ldflags "$(LDFLAGS)" ./cmd/calendar
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o $(BIN_SCHEDULER) -ldflags "$(LDFLAGS)" ./cmd/calendar_scheduler
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o $(BIN_SENDER)    -ldflags "$(LDFLAGS)" ./cmd/calendar_sender
 
 run: build
-	$(BIN_CALENDAR) -config ./configs/config.toml
+	$(BIN_CALENDAR) --config=./configs/calendar_config.yaml
 
 build-img:
 	docker build \
@@ -35,8 +35,8 @@ install-lint-deps:
 lint: install-lint-deps
 	golangci-lint run
 
-DB_HOST     ?= 127.0.0.1
-DB_PORT     ?= 7432
+DB_HOST     ?= postgres
+DB_PORT     ?= 5432
 DB_USER     ?= postgres
 DB_PASSWORD ?= postgres
 DB_NAME     ?= postgres
@@ -85,3 +85,22 @@ protogen:
 			--openapiv2_out=logtostderr=true,allow_delete_body=true,json_names_for_fields=false,allow_merge=true,merge_file_name=prodg_api_server:${PROTO_PATH}
 
 .PHONY: build run build-img run-img version test lint migrate goose-install
+
+DOCKER_COMPOSE := docker-compose
+
+up:
+	$(DOCKER_COMPOSE) up --build calendar calendar_scheduler calendar_sender postgres rabbitmq
+
+down:
+	$(DOCKER_COMPOSE) down -v
+
+integration-tests:
+	$(DOCKER_COMPOSE) down -v
+	$(DOCKER_COMPOSE) up --abort-on-container-exit integration-tests
+	$(DOCKER_COMPOSE) down -v
+
+prepare:
+	$(DOCKER_COMPOSE) up --build postgres rabbitmq migrator
+
+run_services:
+	$(DOCKER_COMPOSE) up --build calendar calendar_scheduler calendar_sender
